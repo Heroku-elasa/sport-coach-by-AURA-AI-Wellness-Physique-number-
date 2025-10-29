@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import SiteHeader from './components/Header';
 import HomePage from './components/Hero';
 import MyPlansPage from './components/ReportGenerator';
@@ -21,14 +21,13 @@ import JoinUsPage from './components/JoinUsPage';
 import DownloadAppPage from './components/DownloadAppPage';
 import ContentCreatorPage from './components/ContentCreatorPage';
 import TrendHubPage from './components/TrendHubPage';
-import BaristaStylerPage from './components/BaristaStyler';
-import AnalyticsPage from './components/AnalyticsPage';
-import PostureAnalysisPage from './components/PostureAnalysisPage';
-import UserProfilePage from './components/UserProfilePage';
-import { Page, SavedConsultation, ProviderSearchResult, Message, SearchResultItem, useLanguage, BaristaStyleResult, SiteAnalyticsData, PostureAnalysisResult } from './types';
+import KineticAnalysisPage from './components/KineticAnalysisPage';
+import { Page, SavedConsultation, ProviderSearchResult, Message, SearchResultItem, useLanguage } from './types';
 import { useToast } from './components/Toast';
 import { initDB, saveConsultation as saveDb, getAllSavedConsultations, deleteConsultation as deleteDb } from './services/dbService';
-import { performSemanticSearch, findLocalProviders, generateBaristaImage, generateBaristaMusicTheme, generateSiteAnalytics, analyzePostureAndMovement } from './services/geminiService';
+import { performSemanticSearch, findLocalProviders } from './services/geminiService';
+import { GoogleGenAI, Chat } from '@google/genai';
+
 
 const App: React.FC = () => {
   const [currentPage, setPage] = useState<Page>('home');
@@ -55,19 +54,7 @@ const App: React.FC = () => {
   const [searchResults, setSearchResults] = useState<SearchResultItem[] | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
   
-  // Barista Styler State
-  const [baristaStyleResult, setBaristaStyleResult] = useState<BaristaStyleResult | null>(null);
-  const [isGeneratingBaristaStyle, setIsGeneratingBaristaStyle] = useState(false);
-
-  // Analytics State
-  const [analyticsData, setAnalyticsData] = useState<SiteAnalyticsData | null>(null);
-  const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
-
-  // Posture Analysis State
-  const [postureAnalysisResult, setPostureAnalysisResult] = useState<PostureAnalysisResult | null>(null);
-  const [isAnalyzingPosture, setIsAnalyzingPosture] = useState(false);
-
-
+  const chatRef = useRef<Chat | null>(null);
   const { addToast } = useToast();
   const { language, t } = useLanguage();
 
@@ -89,7 +76,7 @@ const App: React.FC = () => {
     // Proactively check camera permissions when navigating to the skin consultation page.
     // This provides a better user experience by informing the user if their camera is blocked
     // without an aggressive and immediate permission prompt on page load.
-    if (currentPage === 'skin_consultation' || currentPage === 'posture_analysis') {
+    if (currentPage === 'skin_consultation' || currentPage === 'kinetic_analysis') {
         if (navigator.permissions?.query) {
             navigator.permissions.query({ name: 'camera' as PermissionName })
                 .then((permissionStatus) => {
@@ -123,7 +110,6 @@ const App: React.FC = () => {
   
   const handleLogout = () => {
     setIsAuthenticated(false);
-    setPage('home');
     addToast("You have been logged out.", "info");
   };
 
@@ -166,16 +152,47 @@ const App: React.FC = () => {
       }
   };
 
-  const handleAiSendMessage = (message: string) => {
-      // Mock AI response
+  const handleAiSendMessage = async (message: string) => {
       const userMessage: Message = { role: 'user', parts: [{ text: message }] };
-      setChatHistory(prev => [...prev, userMessage]);
+      // Add user message and an empty placeholder for the model's response
+      setChatHistory(prev => [...prev, userMessage, { role: 'model', parts: [{ text: '' }] }]);
       setIsStreaming(true);
-      setTimeout(() => {
-          const aiResponse: Message = { role: 'model', parts: [{ text: "This is a simulated AI response. The full AI logic is not implemented in this demo." }] };
-          setChatHistory(prev => [...prev, aiResponse]);
+
+      try {
+          if (!chatRef.current) {
+              const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
+              chatRef.current = ai.chats.create({
+                  model: 'gemini-2.5-flash',
+                  config: {
+                      systemInstruction: "You are AURA AI, an expert AI coach specializing in wellness, beauty, and fitness. Provide helpful, encouraging, and safe advice. Always remind users to consult with a professional for medical concerns. Keep responses concise and easy to understand.",
+                  },
+              });
+          }
+          
+          const responseStream = await chatRef.current.sendMessageStream({ message });
+          
+          let modelResponse = "";
+          for await (const chunk of responseStream) {
+              modelResponse += chunk.text;
+              // Update the last message (the model's placeholder) in chat history
+              setChatHistory(prev => {
+                  const newHistory = [...prev];
+                  newHistory[newHistory.length - 1] = { role: 'model', parts: [{ text: modelResponse }] };
+                  return newHistory;
+              });
+          }
+      } catch (err) {
+          handleApiError(err); // This will show a toast
+          const aiErrorResponse: Message = { role: 'model', parts: [{ text: "I'm sorry, I encountered an error. Please try again later." }] };
+          setChatHistory(prev => {
+              const newHistory = [...prev];
+              // The last message is the empty model message, so we replace it with the error.
+              newHistory[newHistory.length - 1] = aiErrorResponse;
+              return newHistory;
+          });
+      } finally {
           setIsStreaming(false);
-      }, 1500);
+      }
   };
   
   const handleProviderSearch = async (
@@ -185,44 +202,44 @@ const App: React.FC = () => {
   ) => {
       setIsFindingProviders(true);
       setProviderResults(null);
-      
-      let location: { lat: number; lon: number } | null = null;
-      
-      if (searchMethod === 'geo') {
-          try {
-              location = await new Promise((resolve, reject) => {
-                  navigator.geolocation.getCurrentPosition(
-                      position => resolve({
-                          lat: position.coords.latitude,
-                          lon: position.coords.longitude
-                      }),
-                      error => reject(error), // Reject the promise on error
-                      { timeout: 10000 }
-                  );
-              });
-          } catch (error: any) {
-              console.error(`Geolocation error (Code: ${error.code}): ${error.message}`);
-              let toastMessage: string;
-              switch(error.code) {
-                  case error.PERMISSION_DENIED:
-                      toastMessage = t('locationFinder.errors.permissionDenied');
-                      break;
-                  case error.POSITION_UNAVAILABLE:
-                      toastMessage = t('locationFinder.errors.positionUnavailable');
-                      break;
-                  case error.TIMEOUT:
-                      toastMessage = t('locationFinder.errors.timeout');
-                      break;
-                  default:
-                      toastMessage = t('locationFinder.errors.generic');
-                      break;
-              }
-              addToast(`${toastMessage} ${t('locationFinder.errors.searchingWithoutLocation')}`, 'info');
-              // location remains null, allowing search to continue without it.
-          }
-      }
-
       try {
+          let location: { lat: number; lon: number } | null = null;
+          if (searchMethod === 'geo') {
+              try {
+                  location = await new Promise((resolve, reject) => {
+                      navigator.geolocation.getCurrentPosition(
+                          position => resolve({
+                              lat: position.coords.latitude,
+                              lon: position.coords.longitude
+                          }),
+                          error => {
+                            console.error(`Geolocation error (Code: ${error.code}): ${error.message}`);
+                            let toastMessage: string;
+                            switch(error.code) {
+                                case error.PERMISSION_DENIED:
+                                    toastMessage = t('locationFinder.errors.permissionDenied');
+                                    break;
+                                case error.POSITION_UNAVAILABLE:
+                                    toastMessage = t('locationFinder.errors.positionUnavailable');
+                                    break;
+                                case error.TIMEOUT:
+                                    toastMessage = t('locationFinder.errors.timeout');
+                                    break;
+                                default:
+                                    toastMessage = t('locationFinder.errors.generic');
+                                    break;
+                            }
+                            addToast(`${toastMessage} ${t('locationFinder.errors.searchingWithoutLocation')}`, 'info');
+                            resolve(null); // Resolve with null to allow search to continue
+                          },
+                          { timeout: 10000 }
+                      );
+                  });
+              } catch (geoError) {
+                  console.error("Geolocation promise error:", geoError);
+                  addToast("Could not get your location.", "error");
+              }
+          }
           const results = await findLocalProviders(query, searchType, location, language);
           setProviderResults(results);
       } catch (err) {
@@ -273,76 +290,6 @@ const App: React.FC = () => {
     }
   };
 
-  const handleGenerateBaristaStyle = async (description: string) => {
-    setIsGeneratingBaristaStyle(true);
-    
-    const initialResultState: BaristaStyleResult = {
-        isLoadingFemaleOutfits: true,
-        femaleOutfitUrls: null,
-        isLoadingMaleOutfits: true,
-        maleOutfitUrls: null,
-        isLoadingCounterDesigns: true,
-        counterUrls: null,
-        musicTheme: '...',
-    };
-    setBaristaStyleResult(initialResultState);
-
-    const femalePrompt = `Photorealistic image of a female barista uniform inspired by this cafe theme: "${description}". The image should show the full outfit (top, apron, pants/skirt) on a mannequin or against a neutral background. Focus on a stylish, practical, and clean look.`;
-    const malePrompt = `Photorealistic image of a male barista uniform inspired by this cafe theme: "${description}". The image should show the full outfit (top, apron, pants) on a mannequin or against a neutral background. Focus on a stylish, practical, and clean look.`;
-    const counterPrompt = `Photorealistic image of a coffee shop counter design and ambiance inspired by this theme: "${description}". Show the main counter, espresso machine, pastry display, and general lighting. The style should be appealing and professional.`;
-
-    const femalePromise = generateBaristaImage(femalePrompt)
-        .then(base64 => setBaristaStyleResult(prev => prev ? ({ ...prev, femaleOutfitUrls: [`data:image/png;base64,${base64}`] }) : prev))
-        .catch(err => { handleApiError(err); })
-        .finally(() => setBaristaStyleResult(prev => prev ? ({ ...prev, isLoadingFemaleOutfits: false }) : prev));
-        
-    const malePromise = generateBaristaImage(malePrompt)
-        .then(base64 => setBaristaStyleResult(prev => prev ? ({ ...prev, maleOutfitUrls: [`data:image/png;base64,${base64}`] }) : prev))
-        .catch(err => { handleApiError(err); })
-        .finally(() => setBaristaStyleResult(prev => prev ? ({ ...prev, isLoadingMaleOutfits: false }) : prev));
-
-    const counterPromise = generateBaristaImage(counterPrompt)
-        .then(base64 => setBaristaStyleResult(prev => prev ? ({ ...prev, counterUrls: [`data:image/png;base64,${base64}`] }) : prev))
-        .catch(err => { handleApiError(err); })
-        .finally(() => setBaristaStyleResult(prev => prev ? ({ ...prev, isLoadingCounterDesigns: false }) : prev));
-        
-    const musicPromise = generateBaristaMusicTheme(description, language)
-        .then(theme => setBaristaStyleResult(prev => prev ? ({ ...prev, musicTheme: theme }) : prev))
-        .catch(err => {
-            handleApiError(err);
-            setBaristaStyleResult(prev => prev ? ({ ...prev, musicTheme: 'Error generating music theme.' }) : prev);
-        });
-
-    await Promise.allSettled([femalePromise, malePromise, counterPromise, musicPromise]);
-
-    setIsGeneratingBaristaStyle(false);
-  };
-
-  const handleFetchAnalytics = async () => {
-    setIsLoadingAnalytics(true);
-    try {
-        const data = await generateSiteAnalytics(language);
-        setAnalyticsData(data);
-    } catch (err) {
-        handleApiError(err);
-    } finally {
-        setIsLoadingAnalytics(false);
-    }
-  };
-
-  const handlePostureAnalysis = async (imageBase64: string, mimeType: string, analysisType: 'posture' | 'squat') => {
-    setIsAnalyzingPosture(true);
-    setPostureAnalysisResult(null);
-    try {
-        const result = await analyzePostureAndMovement(imageBase64, mimeType, analysisType, language);
-        setPostureAnalysisResult(result);
-    } catch (err) {
-        handleApiError(err);
-    } finally {
-        setIsAnalyzingPosture(false);
-    }
-  };
-
   const handleNavigateFromSearch = (page: Page) => {
     setPage(page);
     setIsSearchModalOpen(false);
@@ -372,14 +319,8 @@ const App: React.FC = () => {
             setConsultationToRestore={setConsultationToRestore}
             setPage={setPage}
         />;
-       case 'posture_analysis':
-        return <PostureAnalysisPage
-            onAnalyze={handlePostureAnalysis}
-            isLoading={isAnalyzingPosture}
-            result={postureAnalysisResult}
-            isQuotaExhausted={isQuotaExhausted}
-            handleApiError={handleApiError}
-        />;
+      case 'kinetic_analysis':
+        return <KineticAnalysisPage handleApiError={handleApiError} />;
       case 'location_finder':
         return <LocationFinderPage 
             onSearch={handleProviderSearch}
@@ -404,9 +345,17 @@ const App: React.FC = () => {
       case 'seller_hub':
         return <SellerHubPage handleApiError={handleApiError} />;
       case 'cosmetic_simulator':
-        return <SimulatorPage mode="cosmetic" handleApiError={handleApiError} />;
+        return <SimulatorPage handleApiError={handleApiError} />;
       case 'physique_simulator':
-        return <SimulatorPage mode="physique" handleApiError={handleApiError} />;
+        return <AIAssessmentPage
+            mode="fitness"
+            handleApiError={handleApiError}
+            isQuotaExhausted={isQuotaExhausted}
+            onSaveConsultation={handleSaveConsultation}
+            consultationToRestore={consultationToRestore}
+            setConsultationToRestore={setConsultationToRestore}
+            setPage={setPage}
+        />;
       case 'case_study_bayer_aflak':
         return <ProAthletePlatformPage setPage={setPage} />;
       case 'join_us':
@@ -418,35 +367,12 @@ const App: React.FC = () => {
             onRestore={handleRestoreConsultation}
             setPage={setPage} 
         />;
-      case 'user_profile':
-         return <UserProfilePage
-            savedConsultations={savedConsultations}
-            onDelete={handleDeleteConsultation}
-            onRestore={handleRestoreConsultation}
-            setPage={setPage}
-            onLogoutClick={handleLogout}
-        />;
       case 'download_app':
         return <DownloadAppPage />;
       case 'content_creator':
         return <ContentCreatorPage handleApiError={handleApiError} />;
       case 'trend_hub':
         return <TrendHubPage handleApiError={handleApiError} />;
-      case 'barista_styler':
-        return <BaristaStylerPage 
-          onGenerate={handleGenerateBaristaStyle}
-          isLoading={isGeneratingBaristaStyle}
-          error={null}
-          result={baristaStyleResult}
-          isQuotaExhausted={isQuotaExhausted}
-        />;
-      case 'analytics':
-        return <AnalyticsPage
-            data={analyticsData}
-            isLoading={isLoadingAnalytics}
-            onRefresh={handleFetchAnalytics}
-            isQuotaExhausted={isQuotaExhausted}
-        />;
       default:
         return <HomePage setPage={setPage} />;
     }

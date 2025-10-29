@@ -1,20 +1,21 @@
 import { GoogleGenAI, Type, Modality } from "@google/genai";
-import { TreatmentPlan, Language, MarketAnalysisMode, SymptomDetails, ComprehensiveBeautyResult, SearchResultItem, ProviderSearchResult, SurgeryType, ProcedureIntensity, LipAugmentationIntensity, ComprehensiveFitnessResult, WorkoutPlan, SearchTrend, BaristaStyleResult, SiteAnalyticsData, PostureAnalysisResult } from '../types';
+import { TreatmentPlan, Language, MarketAnalysisMode, SymptomDetails, ComprehensiveBeautyResult, SearchResultItem, ProviderSearchResult, SurgeryType, ProcedureIntensity, LipAugmentationIntensity, ComprehensiveFitnessResult, WorkoutPlan, SearchTrend, KineticAnalysisResult } from '../types';
 
-// This is a placeholder check. In a real-world scenario, the API key
-// should be handled securely, e.g., via a backend proxy or environment variables
-// set during the build process.
-if (!process.env.API_KEY) {
-    console.warn("API_KEY is not set. AI features will not work.");
-}
-
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
 const model = 'gemini-2.5-flash';
-const imageModel = 'gemini-2.5-flash-image';
+
+// Helper function to get a configured AI instance safely.
+const getAiInstance = () => {
+    const apiKey = process.env.API_KEY;
+    if (!apiKey) {
+        throw new Error("API_KEY is not set. AI features will not work. Please configure it in your environment.");
+    }
+    return new GoogleGenAI({ apiKey });
+};
 
 // Generic function to handle generateContent calls
 async function generateContent(prompt: string): Promise<string> {
     try {
+        const ai = getAiInstance();
         const response = await ai.models.generateContent({
             model,
             contents: prompt,
@@ -30,6 +31,7 @@ export const analyzeSearchTrends = async (
     searchQueries: string[],
     language: Language
 ): Promise<SearchTrend[]> => {
+    const ai = getAiInstance();
     const prompt = `
     You are a market trend analyst for a wellness, beauty, and fitness company called AURA.
     Analyze the following list of recent user search queries from our website's database.
@@ -82,7 +84,7 @@ export const generateComprehensiveBeautyAnalysis = async (
     imageBase64: string | null,
     imageMimeType: string | null
 ): Promise<ComprehensiveBeautyResult | { error: string }> => {
-    
+    const ai = getAiInstance();
     const textPrompt = `
     You are a helpful AI assistant for a luxury beauty clinic called AURA. Analyze the following user-described symptoms and provide a comprehensive, multi-faceted beauty and wellness analysis.
 
@@ -173,7 +175,7 @@ export const generateComprehensiveFitnessAnalysis = async (
     imageBase64: string | null,
     imageMimeType: string | null
 ): Promise<ComprehensiveFitnessResult | { error: string }> => {
-    
+    const ai = getAiInstance();
     const textPrompt = `
     You are an expert AI fitness and nutrition coach for the AURA AI platform. Your task is to generate a comprehensive, personalized fitness and diet plan based on the user's data.
 
@@ -191,14 +193,18 @@ export const generateComprehensiveFitnessAnalysis = async (
     
     JSON Generation Instructions:
     1.  **Physique Assessment**: If a photo is provided, give a brief, positive, and general assessment of the user's current physique (e.g., "Ectomorph build with potential for lean muscle gain," or "Solid foundation to begin a fat loss phase."). AVOID specific negative critiques. Be encouraging. If no photo, state that the plan is based on provided stats only.
-    2.  **General Recommendations**: Provide 3-4 high-level, actionable recommendations covering topics like hydration, sleep, consistency, or progressive overload.
-    3.  **Workout Plan**:
+    2.  **Posture Analysis**: If a photo of the user standing is provided, perform a basic biomechanical posture analysis.
+        -   Provide 2-3 key 'observations' about their posture (e.g., "Slight forward head posture noted," "Shoulders appear to be rounded internally," "Even weight distribution on both feet.").
+        -   Provide 2-3 actionable 'recommendations' to improve posture (e.g., "Incorporate chin tuck exercises to strengthen neck extensors," "Focus on scapular retraction exercises like band pull-aparts," "Be mindful of standing tall with shoulders back and down.").
+        -   If no photo is provided or the photo is not suitable for posture analysis (e.g., not a full-body standing pose), set the 'postureAnalysis' field to null.
+    3.  **General Recommendations**: Provide 3-4 high-level, actionable recommendations covering topics like hydration, sleep, consistency, or progressive overload.
+    4.  **Workout Plan**:
         - Create a logical weekly split based on the user's goal and available days (e.g., Full Body, Upper/Lower, PPL). Name the split.
         - For each of the ${userData.daysPerWeek} days, create a workout.
         - Each workout day must have a clear 'focus' (e.g., "Push Day - Chest, Shoulders, Triceps").
         - List 5-7 appropriate 'exercises' for each workout day.
         - For each exercise, provide a realistic 'sets', 'reps', and 'rest' range (e.g., "3-4" sets, "8-12" reps, "60s" rest).
-    4.  **Diet Plan**:
+    5.  **Diet Plan**:
         - Calculate and provide a target for 'dailyCalories'. Base this on the user's stats, goal (e.g., slight surplus for muscle gain, slight deficit for fat loss), and an assumed activity level.
         - Calculate and provide a gram targets for 'macros' (protein, carbs, fat). A common starting point is ~1.6-2.2g protein per kg bodyweight.
         - Provide 3-4 'sampleMeals' (e.g., Breakfast, Lunch, Dinner, Snack) with a brief description of a suitable meal for each.
@@ -208,6 +214,14 @@ export const generateComprehensiveFitnessAnalysis = async (
         type: Type.OBJECT,
         properties: {
             physiqueAssessment: { type: Type.STRING },
+            postureAnalysis: {
+                type: [Type.OBJECT, Type.NULL],
+                properties: {
+                    observations: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    recommendations: { type: Type.ARRAY, items: { type: Type.STRING } },
+                },
+                required: ["observations", "recommendations"],
+            },
             generalRecommendations: { type: Type.ARRAY, items: { type: Type.STRING } },
             workoutPlan: {
                 type: Type.OBJECT,
@@ -269,7 +283,7 @@ export const generateComprehensiveFitnessAnalysis = async (
                 required: ["dailyCalories", "macros", "sampleMeals"],
             },
         },
-        required: ["physiqueAssessment", "generalRecommendations", "workoutPlan", "dietPlan"],
+        required: ["physiqueAssessment", "postureAnalysis", "generalRecommendations", "workoutPlan", "dietPlan"],
     };
 
 
@@ -302,81 +316,69 @@ export const generateComprehensiveFitnessAnalysis = async (
     return JSON.parse(response.text);
 };
 
-export const analyzePostureAndMovement = async (
-    imageBase64: string,
-    imageMimeType: string,
-    analysisType: 'posture' | 'squat',
+export const analyzeKineticMovement = async (
+    movementType: string,
     language: Language
-): Promise<PostureAnalysisResult> => {
-    const posturePrompt = `
-    Analyze the user's standing posture from the provided image. Identify key postural deviations from a neutral alignment. Focus on:
-    1. Head position (forward head, tilt).
-    2. Shoulder alignment (elevation, depression, protraction).
-    3. Spinal curvature (excessive lordosis, kyphosis).
-    4. Pelvic tilt (anterior, posterior).
-    5. Knee position (hyperextension, varus/valgus).
-    `;
+): Promise<KineticAnalysisResult> => {
+    const ai = getAiInstance();
+    const prompt = `
+    You are an expert biomechanics and human movement coach for the AURA AI platform.
+    Your task is to provide a detailed kinetic and kinematic analysis for a specific movement or posture.
+    The user is performing: "${movementType}".
+    The response language MUST be ${language}.
 
-    const squatPrompt = `
-    Analyze the user's bodyweight squat form from the provided image (captured at the bottom of the squat). Identify common form faults. Focus on:
-    1. Squat depth.
-    2. Spinal position (neutral vs. rounded/flexed, i.e., "butt wink").
-    3. Knee tracking (in line with feet vs. knee valgus/caving in).
-    4. Chest position (upright vs. falling forward).
-    5. Heel position (on the ground vs. lifting).
+    Generate a plausible, insightful report based on ideal form and common faults for this movement.
+    The output MUST be a single, valid JSON object that strictly adheres to the provided schema.
+
+    JSON Generation Instructions:
+    1.  **keyMetrics**: Generate 3-4 key kinematic metrics relevant to the ${movementType}. For each metric, provide a plausible 'value' with units (e.g., "2.1 m/s", "150 ms", "45 degrees") and a brief 'explanation' of what this metric means for performance. For posture analysis, metrics could include 'Head Tilt', 'Shoulder Alignment', 'Spinal Curvature'.
+    2.  **performanceInsights**: Provide a list of 3-4 bullet points analyzing the movement. Include both positive reinforcement about correct form and constructive criticism on common technical errors related to the ${movementType}.
+    3.  **correctiveDrills**: Suggest 2-3 specific 'drills' to improve the user's performance in this movement. For each drill, provide a name and a short 'description' of how to perform it.
+    4.  **suggestedSpecialistQuery**: Based on the analysis, suggest a type of specialist to consult.
+        - If the movement is 'standing_posture' or 'sitting_posture' and there are issues, suggest 'Physical Therapist' or 'Corrective Exercise Specialist'.
+        - If the movement is 'sprint', 'jump', or 'cut', suggest 'Sports Performance Coach' or 'Athletic Trainer'.
+    5.  **suggestedSpecialistCategory**: Based on the specialist, classify them into a category. This value MUST be 'coaches'. For physical therapists, corrective specialists, and athletic trainers, use 'coaches'.
     `;
     
-    const prompt = `
-    You are an expert AI Biomechanist and Physical Therapist for the AURA AI platform. Your task is to provide a simplified, educational analysis of a user's posture or movement.
-
-    The user has provided an image for analysis. The analysis type is: '${analysisType}'.
-
-    Your response MUST be a single, valid JSON object. The language for all user-facing text content MUST be ${language}.
-    The tone should be encouraging, educational, and professional. Avoid alarming language.
-
-    Provide 2-3 key observations and 2-3 relevant corrective exercises.
-    `;
-
     const schema = {
         type: Type.OBJECT,
         properties: {
-            summary: { type: Type.STRING, description: "A brief, one or two-sentence overall summary of the findings. Start with a positive or neutral observation." },
-            keyObservations: {
+            keyMetrics: {
                 type: Type.ARRAY,
                 items: {
                     type: Type.OBJECT,
                     properties: {
-                        observation: { type: Type.STRING, description: "A short, clear description of a specific finding (e.g., 'Slight Forward Head Posture')." },
-                        description: { type: Type.STRING, description: "A simple explanation of what this observation means and why it's relevant (e.g., 'This means your head is positioned slightly in front of your body's center of gravity, which can strain neck muscles.')." },
-                        severity: { type: Type.STRING, enum: ['Low', 'Medium', 'High'] }
+                        metric: { type: Type.STRING },
+                        value: { type: Type.STRING },
+                        explanation: { type: Type.STRING }
                     },
-                    required: ["observation", "description", "severity"]
+                    required: ["metric", "value", "explanation"]
                 }
             },
-            correctiveExercises: {
+            performanceInsights: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING }
+            },
+            correctiveDrills: {
                 type: Type.ARRAY,
                 items: {
                     type: Type.OBJECT,
                     properties: {
-                        name: { type: Type.STRING, description: "Name of the corrective exercise or stretch." },
-                        description: { type: Type.STRING, description: "A brief description of how to perform the exercise and its benefits." },
-                        repsAndSets: { type: Type.STRING, description: "A recommended number of repetitions and sets (e.g., '2 sets of 15 repetitions')." }
+                        drill: { type: Type.STRING },
+                        description: { type: Type.STRING }
                     },
-                    required: ["name", "description", "repsAndSets"]
+                    required: ["drill", "description"]
                 }
-            }
+            },
+            suggestedSpecialistQuery: { type: Type.STRING },
+            suggestedSpecialistCategory: { type: Type.STRING, enum: ['coaches', 'doctors'] }
         },
-        required: ["summary", "keyObservations", "correctiveExercises"]
+        required: ["keyMetrics", "performanceInsights", "correctiveDrills", "suggestedSpecialistQuery", "suggestedSpecialistCategory"]
     };
 
     const response = await ai.models.generateContent({
         model,
-        contents: {
-            parts: [
-                { text: `${prompt}\n\n${analysisType === 'posture' ? posturePrompt : squatPrompt}` },
-                { inlineData: { mimeType: imageMimeType, data: imageBase64 } }
-            ]
-        },
+        contents: prompt,
         config: {
             responseMimeType: "application/json",
             responseSchema: schema
@@ -392,6 +394,7 @@ export const generateSpecialists = (prompt: string): Promise<string> => {
 };
 
 export const generateMarketAnalysis = async (query: string, language: Language, mode: MarketAnalysisMode): Promise<string> => {
+    const ai = getAiInstance();
     let prompt = `Analyze the beauty market for "${query}". The response must be in ${language}.`;
 
     switch (mode) {
@@ -433,7 +436,7 @@ export const generateMarketingContent = async (
     tone: string,
     language: Language
 ): Promise<string> => {
-    
+    const ai = getAiInstance();
     const formatInstructions: Record<string, string> = {
         blog: "a well-structured blog post with a catchy title, an introduction, several body paragraphs with subheadings, and a concluding paragraph.",
         instagram: "an engaging Instagram caption. Include relevant emojis and a list of 5-10 popular, relevant hashtags.",
@@ -469,6 +472,7 @@ export const generateMarketingContent = async (
 
 
 export const performSemanticSearch = async (query: string, searchIndex: string, language: Language): Promise<SearchResultItem[]> => {
+    const ai = getAiInstance();
     const prompt = `
         You are an intelligent search engine for the AURA Beauty Clinic website.
         Search the following content index to find items relevant to the user's query.
@@ -518,6 +522,7 @@ export const findLocalProviders = async (
     userLocation: { lat: number; lon: number } | null,
     language: Language
 ): Promise<ProviderSearchResult[]> => {
+    const ai = getAiInstance();
     const locationInfo = userLocation
         ? `The user is at approximately latitude ${userLocation.lat} and longitude ${userLocation.lon}. When generating results, invent a plausible distance in kilometers (e.g., "approx. 2.5 km").`
         : "The user has not provided their location. The 'distance' field should be 'N/A'.";
@@ -594,6 +599,7 @@ export const findLocalProviders = async (
 
 
 export const generateAftercare = async (plan: TreatmentPlan, language: Language): Promise<any> => {
+    const ai = getAiInstance();
     const treatments = plan.suggestedTreatments.map(t => t.name).join(', ');
     const prompt = `For the following beauty treatments: ${treatments}, generate aftercare instructions in ${language}. The response must be a JSON object with two keys: "instructions" and "precautions", each containing an array of strings.`;
     
@@ -607,6 +613,7 @@ export const generateAftercare = async (plan: TreatmentPlan, language: Language)
 };
 
 export const calculateTreatmentCosts = async (plan: TreatmentPlan, language: Language): Promise<any> => {
+    const ai = getAiInstance();
     const treatments = plan.suggestedTreatments.map(t => t.name).join(', ');
     const prompt = `Provide an estimated cost analysis in ${language} for these treatments: ${treatments}. Assume costs are in Iranian Toman (IRT). The response must be a JSON object with one key "treatmentCosts", which is an array of objects. Each object should have "name", "estimatedCost" (as a number), and "unit" (e.g., 'per session').`;
 
@@ -620,6 +627,7 @@ export const calculateTreatmentCosts = async (plan: TreatmentPlan, language: Lan
 };
 
 export const generatePreTreatmentPlan = async (plan: TreatmentPlan, language: Language): Promise<any> => {
+    const ai = getAiInstance();
     const treatments = plan.suggestedTreatments.map(t => t.name).join(', ');
     const prompt = `Generate a pre-treatment plan in ${language} for these treatments: ${treatments}. The response must be a JSON object with three keys: "oneWeekBefore", "oneDayBefore", and "dayOfTreatment". Each key should hold an array of objects, where each object has "item" and "instruction".`;
 
@@ -641,7 +649,7 @@ export const generateSellerConsultation = async (
     audioBase64?: string | null,
     audioMimeType?: string | null
 ): Promise<string> => {
-    
+    const ai = getAiInstance();
     let prompt = `
     You are an expert cosmetic marketing and product strategy consultant for the AURA brand. A seller has provided a list of their products. Your task is to analyze this portfolio and provide a strategic consultation.
 
@@ -715,6 +723,7 @@ export const simulateSurgery = async (
     intensity: ProcedureIntensity,
     language: Language
 ): Promise<string> => {
+    const ai = getAiInstance();
     const intensityMap: { [key: number]: string } = {
         1: 'very subtle',
         2: 'subtle',
@@ -757,7 +766,7 @@ export const simulateSurgery = async (
                 ],
             },
             config: {
-                responseModalities: [Modality.IMAGE],
+                responseModalities: [Modality.IMAGE, Modality.TEXT],
             },
         });
 
@@ -787,6 +796,7 @@ export const simulateWorkoutTransformation = async (
     gender: string,
     workoutPlan: WorkoutPlan | null
 ): Promise<string> => {
+    const ai = getAiInstance();
     const intensityMap: { [key: number]: string } = {
         1: 'light',
         2: 'moderate',
@@ -863,118 +873,4 @@ export const simulateWorkoutTransformation = async (
         }
         throw new Error("Failed to get response from AI model for workout simulation.");
     }
-};
-
-export const generateBaristaImage = async (prompt: string): Promise<string> => {
-    try {
-        const response = await ai.models.generateContent({
-            model: imageModel,
-            contents: { parts: [{ text: prompt }] },
-            config: {
-                responseModalities: [Modality.IMAGE],
-            },
-        });
-
-        for (const part of response.candidates[0].content.parts) {
-            if (part.inlineData) {
-                return part.inlineData.data;
-            }
-        }
-        
-        throw new Error("AI did not return an image.");
-    } catch (error) {
-        console.error("Error generating barista image:", error);
-        if (error instanceof Error && error.message.includes('SAFETY')) {
-             throw new Error("The image could not be generated due to safety policies.");
-        }
-        throw new Error("Failed to get response from AI model for image generation.");
-    }
-};
-
-export const generateBaristaMusicTheme = async (prompt: string, language: Language): Promise<string> => {
-     const fullPrompt = `Based on the following cafe description, suggest a music theme or genre. Be descriptive and evocative. The description is: "${prompt}". The response should be in ${language} and just be the text of the music theme suggestion.`;
-     return generateContent(fullPrompt);
-};
-
-export const generateSiteAnalytics = async (language: Language): Promise<SiteAnalyticsData> => {
-    const prompt = `
-    You are an AI that generates mock data for a website analytics dashboard.
-    The website is AURA AI, a platform for wellness, beauty, and fitness.
-    Generate a realistic, hypothetical JSON object representing today's website analytics.
-
-    Instructions:
-    - The language for all user-facing text content within the JSON, like country names or source names, MUST be '${language}'.
-    - For 'topCountries', provide 5 countries. Include a relevant emoji for each country's flag. The countries should be diverse, including some from the Middle East like Iran or UAE.
-    - For 'trafficSources' and 'deviceBreakdown', ensure the percentages for each category add up to 100.
-    - For 'topPages', use plausible page paths from the AURA AI site like '/skin-consultation', '/fitness-assessment', '/blog/anti-aging-serums'.
-    
-    The entire response must be a single, valid JSON object that strictly adheres to the provided schema.
-    `;
-    
-    const schema = {
-        type: Type.OBJECT,
-        properties: {
-            liveVisitors: { type: Type.NUMBER },
-            todayVisitors: { type: Type.NUMBER },
-            weeklyVisitors: { type: Type.NUMBER },
-            monthlyVisitors: { type: Type.NUMBER },
-            topCountries: {
-                type: Type.ARRAY,
-                items: {
-                    type: Type.OBJECT,
-                    properties: {
-                        country: { type: Type.STRING },
-                        visitors: { type: Type.NUMBER },
-                        flag: { type: Type.STRING },
-                    },
-                    required: ["country", "visitors", "flag"],
-                }
-            },
-            trafficSources: {
-                type: Type.ARRAY,
-                items: {
-                    type: Type.OBJECT,
-                    properties: {
-                        source: { type: Type.STRING },
-                        percentage: { type: Type.NUMBER },
-                    },
-                    required: ["source", "percentage"],
-                }
-            },
-            deviceBreakdown: {
-                type: Type.ARRAY,
-                items: {
-                    type: Type.OBJECT,
-                    properties: {
-                        device: { type: Type.STRING },
-                        percentage: { type: Type.NUMBER },
-                    },
-                    required: ["device", "percentage"],
-                }
-            },
-            topPages: {
-                type: Type.ARRAY,
-                items: {
-                    type: Type.OBJECT,
-                    properties: {
-                        path: { type: Type.STRING },
-                        views: { type: Type.NUMBER },
-                    },
-                    required: ["path", "views"],
-                }
-            },
-        },
-        required: ["liveVisitors", "todayVisitors", "weeklyVisitors", "monthlyVisitors", "topCountries", "trafficSources", "deviceBreakdown", "topPages"],
-    };
-
-    const response = await ai.models.generateContent({
-        model,
-        contents: prompt,
-        config: { 
-            responseMimeType: "application/json",
-            responseSchema: schema
-        }
-    });
-
-    return JSON.parse(response.text);
 };

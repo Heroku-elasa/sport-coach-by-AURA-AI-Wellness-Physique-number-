@@ -75,6 +75,29 @@ const FitnessReportDisplay: React.FC<{ analysis: ComprehensiveFitnessResult }> =
                 </div>
             </section>
             
+            {analysis.postureAnalysis && (
+                 <section>
+                    <h3 className="text-2xl font-bold text-teal-300 mb-4 border-b-2 border-teal-800 pb-2 flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" /></svg>
+                        {t('assessment.report.postureAnalysisTitle')}
+                    </h3>
+                    <div className="bg-gray-900/50 p-6 rounded-lg grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                        <div>
+                            <h4 className="font-semibold text-gray-300 mb-2">{t('assessment.report.postureObservations')}</h4>
+                            <ul className="list-disc list-inside space-y-2 text-gray-300 text-sm">
+                                {analysis.postureAnalysis.observations.map((obs, i) => <li key={i}>{obs}</li>)}
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 className="font-semibold text-gray-300 mb-2">{t('assessment.report.postureRecommendations')}</h4>
+                             <ul className="list-disc list-inside space-y-2 text-gray-300 text-sm">
+                                {analysis.postureAnalysis.recommendations.map((rec, i) => <li key={i}>{rec}</li>)}
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+            )}
+
             <section>
                 <h3 className="text-2xl font-bold text-teal-300 mb-4 border-b-2 border-teal-800 pb-2">{t('assessment.report.recommendationsTitle')}</h3>
                 <div className="bg-gray-900/50 p-6 rounded-lg">
