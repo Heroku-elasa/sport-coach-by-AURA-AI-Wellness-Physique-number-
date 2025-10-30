@@ -176,7 +176,7 @@ const TrendHubPage: React.FC<TrendHubPageProps> = ({ handleApiError }) => {
                                 <label className="block text-sm font-medium text-gray-300 mb-2">{t('contentCreator.toneLabel')}</label>
                                 <div className="grid grid-cols-2 gap-2">
                                     {Object.entries(t('contentCreator.tones')).map(([key, value]) => (
-                                        <button key={key} onClick={() => setTone(key as Tone)} className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors w-full ${tone === key ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>{value as string}</button>
+                                        <button key={key} onClick={() => setTone(key as Tone)} className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors w-full ${tone === key ? 'bg-teal-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>{value as string}</button>d
                                     ))}
                                 </div>
                             </div>
@@ -188,7 +188,7 @@ const TrendHubPage: React.FC<TrendHubPageProps> = ({ handleApiError }) => {
                         >
                             {t('contentCreator.generateButton')}
                         </button>
-                        <div className="pt-4 border-t border-white/10 min-h-[200px]">
+                        <div className="pt-4 border-t border-white/10">
                             {renderGeneratedContent()}
                         </div>
                     </div>

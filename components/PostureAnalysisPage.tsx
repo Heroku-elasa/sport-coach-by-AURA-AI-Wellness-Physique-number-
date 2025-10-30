@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useLanguage, PostureAnalysisResult } from '../types';
 
 interface PostureAnalysisPageProps {
-    onAnalyze: (imageBase64: string, mimeType: string, analysisType: 'posture' | 'squat') => void;
+    onAnalyze: (imageBase64: string, mimeType: string, analysisType: 'posture' | 'squat' | 't-pose' | 'face') => void;
     isLoading: boolean;
     result: PostureAnalysisResult | null;
     isQuotaExhausted: boolean;
@@ -12,13 +12,14 @@ interface PostureAnalysisPageProps {
 // URLs for sample images
 const POSTURE_SAMPLE_URL = 'https://images.unsplash.com/photo-1599838634969-a88a45aa86a2?q=80&w=800&auto=format&fit=crop';
 const SQUAT_SAMPLE_URL = 'https://images.unsplash.com/photo-1599058917212-d750089bc07e?q=80&w=800&auto=format&fit=crop';
+const TPOSE_SAMPLE_URL = 'https://images.unsplash.com/photo-1617964022345-537c0679632e?q=80&w=800&auto=format&fit=crop';
 
 
 const PostureAnalysisPage: React.FC<PostureAnalysisPageProps> = ({ onAnalyze, isLoading, result, isQuotaExhausted, handleApiError }) => {
     const { t } = useLanguage();
     const [isCameraOn, setIsCameraOn] = useState(false);
     const [cameraError, setCameraError] = useState<string | null>(null);
-    const [analysisType, setAnalysisType] = useState<'posture' | 'squat'>('posture');
+    const [analysisType, setAnalysisType] = useState<'posture' | 'squat' | 't-pose' | 'face'>('posture');
     const [sampleImage, setSampleImage] = useState(POSTURE_SAMPLE_URL);
 
     const videoRef = useRef<HTMLVideoElement>(null);
@@ -26,7 +27,19 @@ const PostureAnalysisPage: React.FC<PostureAnalysisPageProps> = ({ onAnalyze, is
     const streamRef = useRef<MediaStream | null>(null);
 
     useEffect(() => {
-        setSampleImage(analysisType === 'posture' ? POSTURE_SAMPLE_URL : SQUAT_SAMPLE_URL);
+        switch (analysisType) {
+            case 'posture':
+                setSampleImage(POSTURE_SAMPLE_URL);
+                break;
+            case 'squat':
+                setSampleImage(SQUAT_SAMPLE_URL);
+                break;
+            case 't-pose':
+                setSampleImage(TPOSE_SAMPLE_URL);
+                break;
+            default:
+                setSampleImage(POSTURE_SAMPLE_URL);
+        }
     }, [analysisType]);
 
     const cleanupCamera = useCallback(() => {
@@ -141,6 +154,17 @@ const PostureAnalysisPage: React.FC<PostureAnalysisPageProps> = ({ onAnalyze, is
                                     </button>
                                     <button onClick={() => setAnalysisType('squat')} className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${analysisType === 'squat' ? 'bg-teal-600 text-white' : 'text-gray-400 hover:bg-gray-700'}`}>
                                         {t('postureAnalysisPage.squat')}
+                                    </button>
+                                     <button onClick={() => setAnalysisType('t-pose')} className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${analysisType === 't-pose' ? 'bg-teal-600 text-white' : 'text-gray-400 hover:bg-gray-700'}`}>
+                                        T-Pose
+                                    </button>
+                                    <button onClick={() => setAnalysisType('face')} className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${analysisType === 'face' ? 'bg-teal-600 text-white' : 'text-gray-400 hover:bg-gray-700'}`}>
+                                        {t('postureAnalysisPage.face')}
+                                    </button>
+                                </div>
+                                 <div className="grid grid-cols-1 gap-2 p-1 bg-gray-900/50 rounded-lg border border-gray-700 mt-2">
+                                    <button disabled className="px-4 py-2 text-sm font-semibold rounded-md transition-colors text-gray-500 bg-gray-800 cursor-not-allowed">
+                                        {t('postureAnalysisPage.live')}
                                     </button>
                                 </div>
                             </div>
