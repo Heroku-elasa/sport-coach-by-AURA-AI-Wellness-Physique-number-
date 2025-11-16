@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useLanguage, ProviderSearchResult } from '../types';
 
 interface LocationFinderPageProps {
@@ -6,8 +6,6 @@ interface LocationFinderPageProps {
   isLoading: boolean;
   results: ProviderSearchResult[] | null;
   isQuotaExhausted: boolean;
-  initialSearch: { query: string; type: 'clinics' | 'doctors' | 'gyms' | 'coaches' } | null;
-  clearInitialSearch: () => void;
 }
 
 const ProviderCard: React.FC<{ provider: ProviderSearchResult }> = ({ provider }) => {
@@ -83,28 +81,12 @@ const LocationFinderPage: React.FC<LocationFinderPageProps> = ({
   isLoading,
   results,
   isQuotaExhausted,
-  initialSearch,
-  clearInitialSearch,
 }) => {
   const { t } = useLanguage();
   const [query, setQuery] = useState('');
   const [searchCategory, setSearchCategory] = useState<'beauty' | 'fitness'>('fitness');
   const [searchType, setSearchType] = useState<'entity' | 'person'>('entity');
   const [queryError, setQueryError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (initialSearch) {
-        setQuery(initialSearch.query);
-
-        const isFitnessType = initialSearch.type === 'gyms' || initialSearch.type === 'coaches';
-        const isPersonType = initialSearch.type === 'doctors' || initialSearch.type === 'coaches';
-        setSearchCategory(isFitnessType ? 'fitness' : 'beauty');
-        setSearchType(isPersonType ? 'person' : 'entity');
-
-        onSearch('text', initialSearch.query, initialSearch.type);
-        clearInitialSearch();
-    }
-  }, [initialSearch, onSearch, clearInitialSearch]);
 
   const handleTextSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();

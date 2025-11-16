@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import SiteHeader from './components/Header';
 import HomePage from './components/Hero';
 import MyPlansPage from './components/ReportGenerator';
@@ -21,12 +21,18 @@ import JoinUsPage from './components/JoinUsPage';
 import DownloadAppPage from './components/DownloadAppPage';
 import ContentCreatorPage from './components/ContentCreatorPage';
 import TrendHubPage from './components/TrendHubPage';
-import KineticAnalysisPage from './components/KineticAnalysisPage';
-import { Page, SavedConsultation, ProviderSearchResult, Message, SearchResultItem, useLanguage } from './types';
+import BaristaStylerPage from './components/BaristaStyler';
+import AnalyticsPage from './components/AnalyticsPage';
+import PostureAnalysisPage from './components/PostureAnalysisPage';
+import UserProfilePage from './components/UserProfilePage';
+import ConversationCoach from './components/DatingSimulator';
+import LiveBeautyCoachPage from './components/LiveBeautyCoachPage';
+import { Page, SavedConsultation, ProviderSearchResult, Message, SearchResultItem, useLanguage, BaristaStyleResult, SiteAnalyticsData, PostureAnalysisResult, ConversationCoachState, TrainingPath, TrainingScenario, Difficulty, Goal, ProductRecommendation } from './types';
 import { useToast } from './components/Toast';
 import { initDB, saveConsultation as saveDb, getAllSavedConsultations, deleteConsultation as deleteDb } from './services/dbService';
-import { performSemanticSearch, findLocalProviders } from './services/geminiService';
-import { GoogleGenAI, Chat } from '@google/genai';
+// FIX: Added missing imports for geminiService functions
+import { performSemanticSearch, findLocalProviders, generateBaristaImage, generateBaristaMusicTheme, generateSiteAnalytics, analyzePostureAndMovement, sendCoachMessage, analyzeConversation, suggestTrainingPaths, performLiveBeautification, getBeautyRecommendations } from './services/geminiService';
+import { TRAINING_PATHS } from './constants';
 
 
 const App: React.FC = () => {
@@ -54,7 +60,43 @@ const App: React.FC = () => {
   const [searchResults, setSearchResults] = useState<SearchResultItem[] | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
   
-  const chatRef = useRef<Chat | null>(null);
+  // Barista Styler State
+  const [baristaStyleResult, setBaristaStyleResult] = useState<BaristaStyleResult | null>(null);
+  const [isGeneratingBaristaStyle, setIsGeneratingBaristaStyle] = useState(false);
+
+  // Analytics State
+  const [analyticsData, setAnalyticsData] = useState<SiteAnalyticsData | null>(null);
+  const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
+
+  // Posture Analysis State
+  const [postureAnalysisResult, setPostureAnalysisResult] = useState<PostureAnalysisResult | null>(null);
+  const [isAnalyzingPosture, setIsAnalyzingPosture] = useState(false);
+  
+  // Live Beauty Coach State
+  const [liveBeautyAnalysisResult, setLiveBeautyAnalysisResult] = useState<{ image: string | null; recommendations: ProductRecommendation[] | null } | null>(null);
+  const [isAnalyzingLiveBeauty, setIsAnalyzingLiveBeauty] = useState(false);
+  
+  // Conversation Coach State
+  const initialCoachState: ConversationCoachState = {
+    chatHistory: [{ role: 'model', parts: [{ text: "Hello! I'm your conversation coach. Let's practice your social skills. You can start by telling me about a recent conversation, or we can jump into a training scenario." }] }],
+    isStreaming: false,
+    isLoadingAnalysis: false,
+    currentAnalysis: null,
+    error: null,
+    activeGoal: null,
+    practiceCount: 0,
+    showPathSelectionScreen: false,
+    activeTrainingPathId: null,
+    activeScenarioId: null,
+    activeDifficulty: null,
+    completedScenarios: {},
+    pathSuggestions: null,
+    selectedPartnerId: 'supportive'
+  };
+  const [conversationCoachState, setConversationCoachState] = useState<ConversationCoachState>(initialCoachState);
+
+
+
   const { addToast } = useToast();
   const { language, t } = useLanguage();
 
@@ -73,10 +115,8 @@ const App: React.FC = () => {
   }, [addToast]);
   
   useEffect(() => {
-    // Proactively check camera permissions when navigating to the skin consultation page.
-    // This provides a better user experience by informing the user if their camera is blocked
-    // without an aggressive and immediate permission prompt on page load.
-    if (currentPage === 'skin_consultation' || currentPage === 'kinetic_analysis') {
+    // Proactively check camera permissions when navigating to pages that need it.
+    if (currentPage === 'skin_consultation' || currentPage === 'posture_analysis' || currentPage === 'live_beauty_coach' || currentPage === 'cosmetic_simulator') {
         if (navigator.permissions?.query) {
             navigator.permissions.query({ name: 'camera' as PermissionName })
                 .then((permissionStatus) => {
@@ -92,24 +132,26 @@ const App: React.FC = () => {
   }, [currentPage, addToast, t]);
 
   const handleApiError = (error: unknown): string => {
-    let message = "An unexpected error occurred.";
+    let message = "An unexpected error occurred. Please try again.";
+    
     if (error instanceof Error) {
         message = error.message;
     } else if (typeof error === 'string') {
         message = error;
     }
     
-    if (message.includes('429') || message.includes('quota')) {
+    // The Gemini service now provides a specific message for quota errors.
+    if (message.toLowerCase().includes('quota')) {
         setIsQuotaExhausted(true);
-        message = "API quota exceeded. Please check your billing or try again later.";
     }
     
     addToast(message, 'error');
-    return message;
+    return message; // This is used to set local error state in some components
   };
   
   const handleLogout = () => {
     setIsAuthenticated(false);
+    setPage('home');
     addToast("You have been logged out.", "info");
   };
 
@@ -152,47 +194,16 @@ const App: React.FC = () => {
       }
   };
 
-  const handleAiSendMessage = async (message: string) => {
+  const handleAiSendMessage = (message: string) => {
+      // Mock AI response
       const userMessage: Message = { role: 'user', parts: [{ text: message }] };
-      // Add user message and an empty placeholder for the model's response
-      setChatHistory(prev => [...prev, userMessage, { role: 'model', parts: [{ text: '' }] }]);
+      setChatHistory(prev => [...prev, userMessage]);
       setIsStreaming(true);
-
-      try {
-          if (!chatRef.current) {
-              const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
-              chatRef.current = ai.chats.create({
-                  model: 'gemini-2.5-flash',
-                  config: {
-                      systemInstruction: "You are AURA AI, an expert AI coach specializing in wellness, beauty, and fitness. Provide helpful, encouraging, and safe advice. Always remind users to consult with a professional for medical concerns. Keep responses concise and easy to understand.",
-                  },
-              });
-          }
-          
-          const responseStream = await chatRef.current.sendMessageStream({ message });
-          
-          let modelResponse = "";
-          for await (const chunk of responseStream) {
-              modelResponse += chunk.text;
-              // Update the last message (the model's placeholder) in chat history
-              setChatHistory(prev => {
-                  const newHistory = [...prev];
-                  newHistory[newHistory.length - 1] = { role: 'model', parts: [{ text: modelResponse }] };
-                  return newHistory;
-              });
-          }
-      } catch (err) {
-          handleApiError(err); // This will show a toast
-          const aiErrorResponse: Message = { role: 'model', parts: [{ text: "I'm sorry, I encountered an error. Please try again later." }] };
-          setChatHistory(prev => {
-              const newHistory = [...prev];
-              // The last message is the empty model message, so we replace it with the error.
-              newHistory[newHistory.length - 1] = aiErrorResponse;
-              return newHistory;
-          });
-      } finally {
+      setTimeout(() => {
+          const aiResponse: Message = { role: 'model', parts: [{ text: "This is a simulated AI response. The full AI logic is not implemented in this demo." }] };
+          setChatHistory(prev => [...prev, aiResponse]);
           setIsStreaming(false);
-      }
+      }, 1500);
   };
   
   const handleProviderSearch = async (
@@ -202,44 +213,44 @@ const App: React.FC = () => {
   ) => {
       setIsFindingProviders(true);
       setProviderResults(null);
-      try {
-          let location: { lat: number; lon: number } | null = null;
-          if (searchMethod === 'geo') {
-              try {
-                  location = await new Promise((resolve, reject) => {
-                      navigator.geolocation.getCurrentPosition(
-                          position => resolve({
-                              lat: position.coords.latitude,
-                              lon: position.coords.longitude
-                          }),
-                          error => {
-                            console.error(`Geolocation error (Code: ${error.code}): ${error.message}`);
-                            let toastMessage: string;
-                            switch(error.code) {
-                                case error.PERMISSION_DENIED:
-                                    toastMessage = t('locationFinder.errors.permissionDenied');
-                                    break;
-                                case error.POSITION_UNAVAILABLE:
-                                    toastMessage = t('locationFinder.errors.positionUnavailable');
-                                    break;
-                                case error.TIMEOUT:
-                                    toastMessage = t('locationFinder.errors.timeout');
-                                    break;
-                                default:
-                                    toastMessage = t('locationFinder.errors.generic');
-                                    break;
-                            }
-                            addToast(`${toastMessage} ${t('locationFinder.errors.searchingWithoutLocation')}`, 'info');
-                            resolve(null); // Resolve with null to allow search to continue
-                          },
-                          { timeout: 10000 }
-                      );
-                  });
-              } catch (geoError) {
-                  console.error("Geolocation promise error:", geoError);
-                  addToast("Could not get your location.", "error");
+      
+      let location: { lat: number; lon: number } | null = null;
+      
+      if (searchMethod === 'geo') {
+          try {
+              location = await new Promise((resolve, reject) => {
+                  navigator.geolocation.getCurrentPosition(
+                      position => resolve({
+                          lat: position.coords.latitude,
+                          lon: position.coords.longitude
+                      }),
+                      error => reject(error), // Reject the promise on error
+                      { timeout: 10000 }
+                  );
+              });
+          } catch (error: any) {
+              console.error(`Geolocation error (Code: ${error.code}): ${error.message}`);
+              let toastMessage: string;
+              switch(error.code) {
+                  case error.PERMISSION_DENIED:
+                      toastMessage = t('locationFinder.errors.permissionDenied');
+                      break;
+                  case error.POSITION_UNAVAILABLE:
+                      toastMessage = t('locationFinder.errors.positionUnavailable');
+                      break;
+                  case error.TIMEOUT:
+                      toastMessage = t('locationFinder.errors.timeout');
+                      break;
+                  default:
+                      toastMessage = t('locationFinder.errors.generic');
+                      break;
               }
+              addToast(`${toastMessage} ${t('locationFinder.errors.searchingWithoutLocation')}`, 'info');
+              // location remains null, allowing search to continue without it.
           }
+      }
+
+      try {
           const results = await findLocalProviders(query, searchType, location, language);
           setProviderResults(results);
       } catch (err) {
@@ -290,6 +301,198 @@ const App: React.FC = () => {
     }
   };
 
+  const handleGenerateBaristaStyle = async (description: string) => {
+    setIsGeneratingBaristaStyle(true);
+    
+    const initialResultState: BaristaStyleResult = {
+        isLoadingFemaleOutfits: true,
+        femaleOutfitUrls: null,
+        isLoadingMaleOutfits: true,
+        maleOutfitUrls: null,
+        isLoadingCounterDesigns: true,
+        counterUrls: null,
+        musicTheme: '...',
+    };
+    setBaristaStyleResult(initialResultState);
+
+    const femalePrompt = `Photorealistic image of a female barista uniform inspired by this cafe theme: "${description}". The image should show the full outfit (top, apron, pants/skirt) on a mannequin or against a neutral background. Focus on a stylish, practical, and clean look.`;
+    const malePrompt = `Photorealistic image of a male barista uniform inspired by this cafe theme: "${description}". The image should show the full outfit (top, apron, pants) on a mannequin or against a neutral background. Focus on a stylish, practical, and clean look.`;
+    const counterPrompt = `Photorealistic image of a coffee shop counter design and ambiance inspired by this theme: "${description}". Show the main counter, espresso machine, pastry display, and general lighting. The style should be appealing and professional.`;
+
+    const femalePromise = generateBaristaImage(femalePrompt)
+        .then(base64 => setBaristaStyleResult(prev => prev ? ({ ...prev, femaleOutfitUrls: [`data:image/png;base64,${base64}`] }) : prev))
+        .catch(err => { handleApiError(err); })
+        .finally(() => setBaristaStyleResult(prev => prev ? ({ ...prev, isLoadingFemaleOutfits: false }) : prev));
+        
+    const malePromise = generateBaristaImage(malePrompt)
+        .then(base64 => setBaristaStyleResult(prev => prev ? ({ ...prev, maleOutfitUrls: [`data:image/png;base64,${base64}`] }) : prev))
+        .catch(err => { handleApiError(err); })
+        .finally(() => setBaristaStyleResult(prev => prev ? ({ ...prev, isLoadingMaleOutfits: false }) : prev));
+
+    const counterPromise = generateBaristaImage(counterPrompt)
+        .then(base64 => setBaristaStyleResult(prev => prev ? ({ ...prev, counterUrls: [`data:image/png;base64,${base64}`] }) : prev))
+        .catch(err => { handleApiError(err); })
+        .finally(() => setBaristaStyleResult(prev => prev ? ({ ...prev, isLoadingCounterDesigns: false }) : prev));
+        
+    const musicPromise = generateBaristaMusicTheme(description, language)
+        .then(theme => setBaristaStyleResult(prev => prev ? ({ ...prev, musicTheme: theme }) : prev))
+        .catch(err => {
+            handleApiError(err);
+            setBaristaStyleResult(prev => prev ? ({ ...prev, musicTheme: 'Error generating music theme.' }) : prev);
+        });
+
+    await Promise.allSettled([femalePromise, malePromise, counterPromise, musicPromise]);
+
+    setIsGeneratingBaristaStyle(false);
+  };
+
+  const handleFetchAnalytics = async () => {
+    setIsLoadingAnalytics(true);
+    try {
+        const data = await generateSiteAnalytics(language);
+        setAnalyticsData(data);
+    } catch (err) {
+        handleApiError(err);
+    } finally {
+        setIsLoadingAnalytics(false);
+    }
+  };
+
+  const handlePostureAnalysis = async (imageBase64: string, mimeType: string, analysisType: 'posture' | 'squat') => {
+    setIsAnalyzingPosture(true);
+    setPostureAnalysisResult(null);
+    try {
+        const result = await analyzePostureAndMovement(imageBase64, mimeType, analysisType, language);
+        setPostureAnalysisResult(result);
+    } catch (err) {
+        handleApiError(err);
+    } finally {
+        setIsAnalyzingPosture(false);
+    }
+  };
+  
+  const handleLiveBeautyAnalysis = async (imageBase64: string, mimeType: string) => {
+    setIsAnalyzingLiveBeauty(true);
+    setLiveBeautyAnalysisResult(null);
+    try {
+        const [imageResult, recommendationsResult] = await Promise.all([
+            performLiveBeautification(imageBase64, mimeType, language),
+            getBeautyRecommendations(imageBase64, mimeType, language)
+        ]);
+        setLiveBeautyAnalysisResult({
+            image: `data:image/png;base64,${imageResult}`,
+            recommendations: recommendationsResult,
+        });
+    } catch (err) {
+        handleApiError(err);
+    } finally {
+        setIsAnalyzingLiveBeauty(false);
+    }
+  };
+  
+  // --- CONVERSATION COACH HANDLERS ---
+    const handleCoachSendMessage = async (message: string) => {
+        const userMessage: Message = { role: 'user', parts: [{ text: message }] };
+        const newHistory = [...conversationCoachState.chatHistory, userMessage];
+
+        setConversationCoachState(prev => ({ ...prev, chatHistory: newHistory, isStreaming: true, error: null }));
+
+        try {
+            const activeScenario = TRAINING_PATHS.flatMap(p => p.scenarios).find(s => s.id === conversationCoachState.activeScenarioId);
+            const partner = t('coach.partners').find((p: any) => p.id === conversationCoachState.selectedPartnerId) || t('coach.partners')[0];
+            
+            const aiResponseText = await sendCoachMessage(
+                newHistory,
+                language,
+                partner,
+                activeScenario,
+                conversationCoachState.activeDifficulty
+            );
+
+            const aiResponse: Message = { role: 'model', parts: [{ text: aiResponseText }] };
+            setConversationCoachState(prev => ({ ...prev, chatHistory: [...prev.chatHistory, aiResponse] }));
+
+        } catch (err) {
+            const msg = handleApiError(err);
+            setConversationCoachState(prev => ({ ...prev, error: msg }));
+        } finally {
+            setConversationCoachState(prev => ({ ...prev, isStreaming: false }));
+        }
+    };
+
+    const handleEndCoachSession = async () => {
+        setConversationCoachState(prev => ({ ...prev, isLoadingAnalysis: true, error: null }));
+        try {
+            const [analysis, suggestions] = await Promise.all([
+                analyzeConversation(conversationCoachState.chatHistory, language),
+                suggestTrainingPaths(conversationCoachState.chatHistory, language)
+            ]);
+            setConversationCoachState(prev => ({ ...prev, currentAnalysis: analysis, pathSuggestions: suggestions }));
+        } catch (err) {
+            const msg = handleApiError(err);
+            setConversationCoachState(prev => ({ ...prev, error: msg, currentAnalysis: null }));
+        } finally {
+            setConversationCoachState(prev => ({ ...prev, isLoadingAnalysis: false }));
+        }
+    };
+
+    const handleCoachReset = (isEndingScenario = false) => {
+        setConversationCoachState(prev => {
+            const newState: Partial<ConversationCoachState> = {
+                currentAnalysis: null,
+                isLoadingAnalysis: false,
+                pathSuggestions: null,
+                error: null,
+            };
+            if (isEndingScenario) {
+                // Keep training context, but reset chat for next scenario
+                newState.chatHistory = [{ role: 'model', parts: [{ text: t('coach.scenarioEnded') }] }];
+                newState.activeScenarioId = null;
+                newState.activeDifficulty = null;
+            } else {
+                // Soft reset, go back to path selection or initial screen
+                newState.chatHistory = initialCoachState.chatHistory;
+                newState.showPathSelectionScreen = prev.activeTrainingPathId ? true : false;
+                newState.activeScenarioId = null;
+                newState.activeDifficulty = null;
+            }
+            return { ...prev, ...newState };
+        });
+    };
+    
+    const handleFullCoachReset = () => {
+        setConversationCoachState(initialCoachState);
+    };
+
+    const handleStartTrainingPath = (path: TrainingPath) => {
+        setConversationCoachState(prev => ({
+            ...prev,
+            activeTrainingPathId: path.id,
+            showPathSelectionScreen: false,
+            chatHistory: [{ role: 'model', parts: [{ text: `Training Path Started: ${path.title[language]}` }] }]
+        }));
+    };
+    
+    const handleStartScenario = (scenario: TrainingScenario, difficulty: Difficulty) => {
+         setConversationCoachState(prev => ({
+            ...prev,
+            activeScenarioId: scenario.id,
+            activeDifficulty: difficulty,
+            chatHistory: [{ role: 'model', parts: [{ text: `Starting scenario: ${scenario.title[language]} (${difficulty}). ${t('coach.scenarioStartPrompt')}` }] }]
+        }));
+    };
+    
+    const handleExitTraining = () => {
+        setConversationCoachState(prev => ({
+            ...prev,
+            activeTrainingPathId: null,
+            activeScenarioId: null,
+            activeDifficulty: null,
+            showPathSelectionScreen: true
+        }));
+    };
+
+
   const handleNavigateFromSearch = (page: Page) => {
     setPage(page);
     setIsSearchModalOpen(false);
@@ -319,8 +522,41 @@ const App: React.FC = () => {
             setConsultationToRestore={setConsultationToRestore}
             setPage={setPage}
         />;
-      case 'kinetic_analysis':
-        return <KineticAnalysisPage handleApiError={handleApiError} />;
+       case 'posture_analysis':
+        return <PostureAnalysisPage
+            onAnalyze={handlePostureAnalysis}
+            isLoading={isAnalyzingPosture}
+            result={postureAnalysisResult}
+            isQuotaExhausted={isQuotaExhausted}
+            handleApiError={handleApiError}
+        />;
+       case 'live_beauty_coach':
+        return <LiveBeautyCoachPage
+            onAnalyze={handleLiveBeautyAnalysis}
+            isLoading={isAnalyzingLiveBeauty}
+            result={liveBeautyAnalysisResult}
+            isQuotaExhausted={isQuotaExhausted}
+            handleApiError={handleApiError}
+        />;
+       case 'conversation_coach':
+        const activePath = TRAINING_PATHS.find(p => p.id === conversationCoachState.activeTrainingPathId);
+        const activeScenario = activePath?.scenarios.find(s => s.id === conversationCoachState.activeScenarioId);
+        return <ConversationCoach
+            state={conversationCoachState}
+            setState={setConversationCoachState}
+            onSendMessage={handleCoachSendMessage}
+            onEndSession={handleEndCoachSession}
+            onReset={handleCoachReset}
+            onFullReset={handleFullCoachReset}
+            activePath={activePath || null}
+            activeScenario={activeScenario || null}
+            onStartTrainingPath={handleStartTrainingPath}
+            onStartScenario={handleStartScenario}
+            onExitTraining={handleExitTraining}
+            // Dummy props for practice goals not yet implemented
+            onStartPractice={(goal: Goal) => {}}
+            onNextPractice={() => {}}
+        />;
       case 'location_finder':
         return <LocationFinderPage 
             onSearch={handleProviderSearch}
@@ -345,17 +581,9 @@ const App: React.FC = () => {
       case 'seller_hub':
         return <SellerHubPage handleApiError={handleApiError} />;
       case 'cosmetic_simulator':
-        return <SimulatorPage handleApiError={handleApiError} />;
+        return <SimulatorPage mode="cosmetic" handleApiError={handleApiError} />;
       case 'physique_simulator':
-        return <AIAssessmentPage
-            mode="fitness"
-            handleApiError={handleApiError}
-            isQuotaExhausted={isQuotaExhausted}
-            onSaveConsultation={handleSaveConsultation}
-            consultationToRestore={consultationToRestore}
-            setConsultationToRestore={setConsultationToRestore}
-            setPage={setPage}
-        />;
+        return <SimulatorPage mode="physique" handleApiError={handleApiError} />;
       case 'case_study_bayer_aflak':
         return <ProAthletePlatformPage setPage={setPage} />;
       case 'join_us':
@@ -367,12 +595,35 @@ const App: React.FC = () => {
             onRestore={handleRestoreConsultation}
             setPage={setPage} 
         />;
+      case 'user_profile':
+         return <UserProfilePage
+            savedConsultations={savedConsultations}
+            onDelete={handleDeleteConsultation}
+            onRestore={handleRestoreConsultation}
+            setPage={setPage}
+            onLogoutClick={handleLogout}
+        />;
       case 'download_app':
         return <DownloadAppPage />;
       case 'content_creator':
         return <ContentCreatorPage handleApiError={handleApiError} />;
       case 'trend_hub':
         return <TrendHubPage handleApiError={handleApiError} />;
+      case 'barista_styler':
+        return <BaristaStylerPage 
+          onGenerate={handleGenerateBaristaStyle}
+          isLoading={isGeneratingBaristaStyle}
+          error={null}
+          result={baristaStyleResult}
+          isQuotaExhausted={isQuotaExhausted}
+        />;
+      case 'analytics':
+        return <AnalyticsPage
+            data={analyticsData}
+            isLoading={isLoadingAnalytics}
+            onRefresh={handleFetchAnalytics}
+            isQuotaExhausted={isQuotaExhausted}
+        />;
       default:
         return <HomePage setPage={setPage} />;
     }

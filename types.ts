@@ -9,9 +9,11 @@ const translations: Record<string, any> = {
             aiServices: "AI Services",
             skinConsultation: "AI Skin Analysis",
             fitnessAssessment: "AI Fitness Assessment",
-            movementAnalysis: "AI Movement Analysis",
+            postureAnalysis: "AI Posture Analysis",
+            conversationCoach: "AI Conversation Coach",
             cosmeticSimulator: "Cosmetic Simulator",
             physiqueSimulator: "Physique Simulator",
+            liveBeautyCoach: "Live Beauty Coach",
             locationFinder: "Find Locations",
             aiCoach: "AI Coach",
             marketTrends: "Market Trends",
@@ -20,18 +22,26 @@ const translations: Record<string, any> = {
             joinUs: "Join Us",
             sellerHub: "Seller Hub",
             myPlans: "My Plans",
+            myProfile: "My Profile",
             login: "Login / Sign Up",
             logout: "Logout",
             downloadApp: "Download App",
             contentCreator: "Content Studio",
             trendHub: "Trend Hub",
+            findAndLearn: "Find & Learn",
+            forBusiness: "For Business",
+            aboutUs: "About Us",
+            baristaStyler: "Barista Styler",
+            siteAnalytics: "Site Analytics",
         },
         hero: {
             title: "AURA AI: Your Partner in<br/>Wellness & Physique",
             subtitle: "Personalized skin analysis, AI-generated workout plans, and treatment suggestions to help you achieve your peak form, inside and out.",
             button1: "Start AI Skin Analysis",
             button2: "Start AI Fitness Plan",
-            button3: "Live Movement Analysis",
+            button3: "Start AI Movement Analysis",
+            button4: "Practice Conversation Skills",
+            button5: "Start Live Beauty Coach",
             servicesTitle: "Our Premier Services",
             servicesSubtitle: "A holistic approach to well-being, combining advanced aesthetic treatments with scientific fitness coaching.",
             cosmeticServices: [
@@ -99,6 +109,9 @@ const translations: Record<string, any> = {
         loginModal: {
             title: "Login to Your Account",
             google: "Continue with Google",
+            facebook: "Continue with Facebook",
+            instagram: "Continue with Instagram",
+            or: "OR",
             emailPlaceholder: "Enter your email",
             passwordPlaceholder: "Enter your password",
             loginButton: "Login",
@@ -266,9 +279,12 @@ const translations: Record<string, any> = {
                 reps: "Reps",
                 rest: "Rest",
                 video: "Video",
-                postureAnalysisTitle: "AI Posture Analysis (Kinematum™ Engine)",
-                postureObservations: "Key Observations",
-                postureRecommendations: "Corrective Recommendations",
+                // Skin Report Visuals
+                yourAnalyzedPhoto: "Your Analyzed Photo",
+                visualizeCondition: "Visualize Condition",
+                visualizing: "Visualizing...",
+                visualizationTitle: "AI Visualization",
+                generatingVisualization: "Generating visual representation...",
             },
             workoutSimulator: {
                 title: "Workout Transformation Simulator",
@@ -294,36 +310,13 @@ const translations: Record<string, any> = {
                 planRequiredError: "A workout plan must be generated first to run the simulation."
             }
         },
-        movementAnalysisPage: {
-            title: "AI Posture & Movement Analysis",
-            subtitle: "Analyze your posture and athletic performance with AI-driven kinetic data capture, right from your device's camera.",
-            selectMovement: "Select an item to analyze:",
-            movements: {
-                standing_posture: "Standing Posture",
-                sitting_posture: "Sitting Posture",
-                sprint: "Acceleration / Sprint",
-                jump: "Vertical Jump",
-                cut: "Change of Direction (Cut)",
-            },
-            instructions: "Position yourself so your full body is visible. Press 'Start Analysis' when ready.",
-            startButton: "Start Analysis",
-            analyzing: "Analyzing... Hold position!",
-            newAnalysisButton: "Start New Analysis",
-            resultsTitle: "Biomechanical Report",
-            keyMetrics: "Key Biomechanical Data",
-            performanceInsights: "Performance Insights",
-            correctiveDrills: "Corrective Drills",
-            noCamera: "Camera not found or access denied. Please enable camera permissions in your browser settings to use this feature.",
-            specialistSuggestion: "Recommended Specialist",
-            findSpecialistButton: "Find a Specialist Near You"
-        },
-        permissions: {
-            cameraDenied: "Camera access is denied. Please enable it in your browser settings to use camera features.",
-        },
         validation: {
             required: "This field is required.",
             email: "Please enter a valid email address.",
             passwordLength: "Password must be at least 6 characters long.",
+        },
+        permissions: {
+            cameraDenied: "Camera access is denied. To use the camera feature, please enable it in your browser settings.",
         },
         sellerHub: {
              presets: {
@@ -360,6 +353,34 @@ const translations: Record<string, any> = {
             showChanges: "Highlight Changes",
             hideChanges: "Hide Highlights",
             simulatedEffectText: "Simulated effect of {procedure}.",
+            photoshootTab: "AI Photoshoot",
+            photoshootTitle: "Generate a New Viewpoint",
+            photoshootDescription: "Describe a style, and our AI will create a professional-style photoshoot image.",
+            photoshootPromptPlaceholder: "e.g., 'Vogue magazine cover, dramatic lighting, soft focus'",
+            generatePhotoshootButton: "Generate Viewpoint",
+            glamourTab: "AI Glamour",
+            glamourTitle: "AI Glamour Shot",
+            glamourDescription: "Let our AI perform a professional glamour retouch on your photo. It will enhance lighting, smooth skin, and apply tasteful makeup for a polished look.",
+            beautifyButton: "Beautify My Photo",
+        },
+        liveBeautyCoachPage: {
+            title: "Live AI Beauty Coach",
+            subtitle: "Get real-time beauty enhancements and personalized product recommendations. Position your face in the frame and capture an image to begin.",
+            startCamera: "Start Camera",
+            stopCamera: "Stop Camera",
+            captureAndAnalyze: "Capture & Analyze",
+            analyzing: "Analyzing...",
+            before: "Before",
+            after: "After",
+            recommendationsTitle: "Personalized Recommendations",
+            getStarted: "Start your camera to begin the live analysis.",
+            preparingCamera: "Preparing Camera...",
+            errors: {
+                permissionDenied: "Camera access was denied. To use this feature, please allow camera access in your browser's site settings and refresh the page.",
+                notFound: "No camera found on your device. Please ensure a camera is connected and enabled.",
+                generic: "Could not start the camera. Please ensure it's not being used by another application and that you have granted permission.",
+                cameraNotReady: "Camera not ready or video has no dimensions. Please wait a moment and try again."
+            }
         },
         proAthletePlatform: {
             hero: {
@@ -520,6 +541,138 @@ const translations: Record<string, any> = {
             createContentButton: "Create Content on this Topic",
             contentCreationTitle: "Content Creation",
         },
+        baristaStyler: {
+            title: "AI Barista & Cafe Styler",
+            subtitle: "Describe your cafe's mood and theme, and our AI will generate a complete visual and auditory identity for your brand.",
+            descriptionLabel: "Describe your cafe's atmosphere",
+            descriptionPlaceholder: "e.g., 'A cozy, rustic cafe with lots of wood, plants, and warm lighting, focused on specialty coffee and homemade pastries.'",
+            buttonText: "Generate Style",
+            generating: "Generating Style...",
+            placeholder: "Your generated style will appear here. Start by describing your cafe's mood.",
+            resultsTitle: "Your AI-Generated Cafe Style",
+            femaleStyle: "Female Barista Uniform",
+            maleStyle: "Male Barista Uniform",
+            counterDesign: "Counter & Ambiance Design",
+            musicTheme: "Suggested Music Theme",
+            generatingImage: "Generating...",
+            imageFailed: "Image generation failed.",
+            validationError: "Please describe your cafe's atmosphere before generating a style."
+        },
+        analyticsPage: {
+            title: "Site Analytics",
+            subtitle: "A real-time overview of your website's performance and audience engagement.",
+            refreshButton: "Refresh Data",
+            liveVisitors: "Live Visitors",
+            today: "Today",
+            thisWeek: "This Week",
+            thisMonth: "This Month",
+            topCountries: "Top Countries by Visitors",
+            trafficSources: "Traffic Sources",
+            deviceBreakdown: "Device Breakdown",
+            topPages: "Most Visited Pages",
+            page: "Page",
+            views: "Views",
+            howToConnect: "About This Dashboard",
+            howToConnectBody: "This is an AI-powered simulation of a real analytics dashboard. The data is hypothetically generated by Gemini to showcase what's possible. To get real data for your website, you would typically integrate a service like Google Analytics. This involves adding a tracking script to your site and then using the Google Analytics API with secure authentication (OAuth 2.0) to fetch and display live data in a dashboard like this one.",
+        },
+        postureAnalysisPage: {
+            title: "AI Posture & Movement Analysis",
+            subtitle: "Using computer vision to analyze your biomechanics, inspired by the principles of Kinematum.",
+            instructionsTitle: "How it Works",
+            instructions: [
+                "1. Select 'Static Posture' or 'Squat' analysis below.",
+                "2. Press 'Start Camera' and grant permissions if prompted.",
+                "3. Position yourself to match the sample pose. Ensure your entire body is visible.",
+                "4. Click 'Analyze' to capture your image for AI analysis."
+            ],
+            startCamera: "Start Camera",
+            stopCamera: "Stop Camera",
+            cameraError: "Could not access camera. Please check your browser permissions.",
+            analysisType: "Analysis Type",
+            posture: "Static Posture",
+            squat: "Squat Movement",
+            analyzePosture: "Analyze Posture",
+            analyzeSquat: "Analyze Squat",
+            analyzing: "Analyzing...",
+            resultsTitle: "Your Analysis",
+            summary: "Summary",
+            keyObservations: "Key Observations",
+            correctiveExercises: "Corrective Exercises",
+            severity: "Severity",
+            placeholder: "Your analysis results will appear here after capturing.",
+            getStarted: "Enable your camera and match the sample pose to get started.",
+            samplePose: "Sample Pose",
+            yourCamera: "Your Camera",
+            visualizeCorrection: "Visualize Correction",
+            visualizing: "Visualizing...",
+            visualizationTitle: "Corrective Visualization",
+            before: "Your Posture",
+            after: "Potential Improvement",
+            close: "Close",
+            visualizationError: "Could not generate visualization.",
+        },
+        profilePage: {
+            title: "My Profile",
+            subtitle: "Manage your profile, settings, and saved plans.",
+            welcome: "Welcome, Aura User",
+            userInfo: "User Information",
+            email: "Email",
+            mockEmail: "user@aura-ai.com (demo)",
+            settings: "Preferences",
+            language: "Language",
+            myPlans: "My Saved Plans",
+            view: "View"
+        },
+        datingSimulator: {
+            title: "AI Conversation Coach",
+            subtitle: "Hone your social skills in a safe, guided environment. Practice conversations and get instant feedback."
+        },
+        coach: {
+            explorePaths: "Explore Training Paths",
+            fullReset: "Reset Coach",
+            partnerSelectLabel: "Practice with:",
+            partners: [
+                { id: 'supportive', name: 'Supportive & Empathetic' },
+                { id: 'direct', name: 'Direct & Logical' },
+                { id: 'playful', name: 'Playful & Witty' },
+                { id: 'reserved', name: 'Thoughtful & Reserved' },
+            ],
+            trainingMode: "Training Mode",
+            endSessionButton: "Analyze Conversation",
+            messagePlaceholder: "Type your message...",
+            trainingPathsTitle: "Conversation Training Paths",
+            trainingPathsSubtitle: "Select a path to focus on specific conversational skills through guided scenarios.",
+            startPathButton: "Start Path",
+            exitTraining: "Exit Training",
+            practiceButton: "Practice",
+            difficultyTitle: "Select Difficulty",
+            easy: "Easy",
+            hard: "Hard",
+            easyReward: "Reward",
+            hardReward: "Reward",
+            selectButton: "Select",
+            scenarioEnded: "Scenario complete! You can choose another or exit training.",
+            scenarioStartPrompt: "The scene is set. How do you begin?",
+            analyzing: "Analyzing your conversation...",
+            analysisTitle: "Conversation Analysis",
+            goalAnalysisTitle: "Practice Round Analysis",
+            scores: {
+                rapport: "Rapport",
+                curiosity: "Curiosity",
+                vulnerability: "Vulnerability",
+                confidence: "Confidence"
+            },
+            strengths: "What Went Well",
+            improvements: "Areas for Improvement",
+            pathSuggestionTitle: "Recommended Training",
+            startThisPath: "Start This Path",
+            nextPractice: "Next Round",
+            endPractice: "End Practice",
+            finishAndReview: "Finish & Review",
+            startNewChat: "Start New Conversation",
+            endScenarioButton: "End Scenario",
+            analysisPlaceholder: "Your conversation analysis will appear here after you click 'Analyze Conversation'."
+        },
     },
     fa: {
         header: {
@@ -527,9 +680,11 @@ const translations: Record<string, any> = {
             aiServices: "خدمات هوشمند",
             skinConsultation: "تحلیل پوست",
             fitnessAssessment: "ارزیابی تناسب اندام",
-            movementAnalysis: "تحلیل حرکت",
+            postureAnalysis: "تحلیل وضعیت بدن",
+            conversationCoach: "مربی مکالمه",
             cosmeticSimulator: "شبیه‌ساز زیبایی",
             physiqueSimulator: "شبیه‌ساز بدن",
+            liveBeautyCoach: "مربی زیبایی زنده",
             locationFinder: "مکان‌یاب",
             aiCoach: "مربی هوشمند",
             marketTrends: "ترندهای بازار",
@@ -538,18 +693,26 @@ const translations: Record<string, any> = {
             joinUs: "به ما بپیوندید",
             sellerHub: "پنل فروشندگان",
             myPlans: "برنامه‌های من",
+            myProfile: "پروفایل من",
             login: "ورود / ثبت نام",
             logout: "خروج",
             downloadApp: "دانلود اپلیکیشن",
             contentCreator: "استودیوی محتوا",
             trendHub: "مرکز ترند",
+            findAndLearn: "جستجو و یادگیری",
+            forBusiness: "برای کسب و کار",
+            aboutUs: "درباره ما",
+            baristaStyler: "طراحی باریستا",
+            siteAnalytics: "تحلیل سایت",
         },
         hero: {
             title: "AURA AI: همراه شما در<br/>سلامتی و تناسب اندام",
             subtitle: "تحلیل پوست شخصی‌سازی‌شده، برنامه‌های تمرینی هوشمند و پیشنهادات درمانی برای رسیدن به بهترین فرم شما، از درون و بیرون.",
             button1: "شروع تحلیل پوست",
             button2: "دریافت برنامه تناسب اندام",
-            button3: "تحلیل زنده حرکت",
+            button3: "شروع تحلیل حرکت",
+            button4: "تمرین مهارت‌های گفتگو",
+            button5: "شروع مربی زیبایی زنده",
             servicesTitle: "خدمات برتر ما",
             servicesSubtitle: "نگاهی جامع به سلامتی، با ترکیب درمان‌های زیبایی پیشرفته و مربیگری علمی تناسب اندام.",
             cosmeticServices: [
@@ -617,6 +780,9 @@ const translations: Record<string, any> = {
         loginModal: {
             title: "ورود به حساب کاربری",
             google: "ادامه با گوگل",
+            facebook: "ادامه با فیسبوک",
+            instagram: "ادامه با اینستاگرام",
+            or: "یا",
             emailPlaceholder: "ایمیل خود را وارد کنید",
             passwordPlaceholder: "رمز عبور خود را وارد کنید",
             loginButton: "ورود",
@@ -784,9 +950,12 @@ const translations: Record<string, any> = {
                 reps: "تکرار",
                 rest: "استراحت",
                 video: "ویدیو",
-                postureAnalysisTitle: "تحلیل هوشمند پاسچر (موتور Kinematum™)",
-                postureObservations: "مشاهدات کلیدی",
-                postureRecommendations: "توصیه‌های اصلاحی",
+                 // Skin Report Visuals
+                yourAnalyzedPhoto: "تصویر تحلیل شده شما",
+                visualizeCondition: "تجسم عارضه",
+                visualizing: "در حال تجسم...",
+                visualizationTitle: "تجسم هوش مصنوعی",
+                generatingVisualization: "در حال تولید نمایش بصری...",
             },
             workoutSimulator: {
                 title: "شبیه‌ساز تحول با ورزش",
@@ -812,36 +981,13 @@ const translations: Record<string, any> = {
                 planRequiredError: "برای اجرای شبیه‌سازی، ابتدا باید یک برنامه تمرینی ایجاد شود."
             }
         },
-        movementAnalysisPage: {
-            title: "تحلیل هوشمند پاسچر و حرکت",
-            subtitle: "پاسچر و عملکرد ورزشی خود را با تحلیل داده‌های جنبشی مبتنی بر هوش مصنوعی، مستقیماً از دوربین دستگاه خود، ارزیابی کنید.",
-            selectMovement: "یک مورد را برای تحلیل انتخاب کنید:",
-            movements: {
-                standing_posture: "پاسچر ایستاده",
-                sitting_posture: "پاسچر نشسته",
-                sprint: "شتاب / دو سرعت",
-                jump: "پرش عمودی",
-                cut: "تغییر جهت (برش)",
-            },
-            instructions: "طوری قرار بگیرید که تمام بدن شما قابل مشاهده باشد. وقتی آماده بودید، «شروع تحلیل» را فشار دهید.",
-            startButton: "شروع تحلیل",
-            analyzing: "در حال تحلیل... ثابت بمانید!",
-            newAnalysisButton: "شروع تحلیل جدید",
-            resultsTitle: "گزارش بیومکانیکی",
-            keyMetrics: "داده‌های کلیدی بیومکانیکی",
-            performanceInsights: "بینش‌های عملکردی",
-            correctiveDrills: "تمرینات اصلاحی",
-            noCamera: "دوربین یافت نشد یا دسترسی رد شد. لطفاً برای استفاده از این ویژگی، مجوزهای دوربین را در تنظیمات مرورگر خود فعال کنید.",
-            specialistSuggestion: "متخصص پیشنهادی",
-            findSpecialistButton: "یافتن متخصص در نزدیکی شما"
-        },
-        permissions: {
-            cameraDenied: "دسترسی به دوربین رد شده است. لطفاً برای استفاده از ویژگی‌های دوربین، آن را در تنظیمات مرورگر خود فعال کنید.",
-        },
         validation: {
             required: "این فیلد الزامی است.",
             email: "لطفا یک آدرس ایمیل معتبر وارد کنید.",
             passwordLength: "رمز عبور باید حداقل ۶ کارکاتر باشد.",
+        },
+        permissions: {
+            cameraDenied: "دسترسی به دوربین مسدود است. برای استفاده از دوربین، لطفاً آن را در تنظیمات مرورگر خود فعال کنید.",
         },
         sellerHub: {
             presets: {
@@ -878,6 +1024,34 @@ const translations: Record<string, any> = {
             showChanges: "نمایش تغییرات",
             hideChanges: "پنهان کردن تغییرات",
             simulatedEffectText: "تأثیر شبیه‌سازی شده برای {procedure}.",
+            photoshootTab: "فتوشات هوشمند",
+            photoshootTitle: "ایجاد یک نمای جدید",
+            photoshootDescription: "یک سبک را توصیف کنید تا هوش مصنوعی ما یک تصویر فتوشات حرفه‌ای برای شما بسازد.",
+            photoshootPromptPlaceholder: "مثال: «عکس روی جلد مجله ووگ، نورپردازی دراماتیک، فوکوس نرم»",
+            generatePhotoshootButton: "ایجاد نما",
+            glamourTab: "زیبایی هوشمند",
+            glamourTitle: "رتوش هوشمند",
+            glamourDescription: "اجازه دهید هوش مصنوعی ما یک رتوش حرفه‌ای روی عکس شما انجام دهد. نورپردازی بهبود یافته، پوست صاف‌تر و آرایش طبیعی برای یک ظاهر بی‌نقص.",
+            beautifyButton: "عکس مرا زیبا کن",
+        },
+        liveBeautyCoachPage: {
+            title: "مربی زیبایی زنده هوش مصنوعی",
+            subtitle: "بهبودهای زیبایی لحظه‌ای و توصیه‌های شخصی محصولات را دریافت کنید. صورت خود را در کادر قرار دهید و برای شروع یک عکس بگیرید.",
+            startCamera: "شروع دوربین",
+            stopCamera: "توقف دوربین",
+            captureAndAnalyze: "عکس بگیر و تحلیل کن",
+            analyzing: "در حال تحلیل...",
+            before: "قبل",
+            after: "بعد",
+            recommendationsTitle: "توصیه‌های شخصی‌سازی‌شده",
+            getStarted: "برای شروع تحلیل زنده، دوربین خود را فعال کنید.",
+            preparingCamera: "در حال آماده‌سازی دوربین...",
+            errors: {
+                permissionDenied: "دسترسی به دوربین رد شد. برای استفاده از این قابلیت، لطفاً دسترسی دوربین را در تنظیمات سایت مرورگر خود فعال کرده و صفحه را دوباره بارگیری کنید.",
+                notFound: "هیچ دوربینی در دستگاه شما یافت نشد. لطفاً اطمینان حاصل کنید که دوربین متصل و فعال است.",
+                generic: "دوربین روشن نشد. لطفاً بررسی کنید که توسط برنامه دیگری استفاده نمی‌شود و مجوزهای لازم را داده‌اید.",
+                cameraNotReady: "دوربین آماده نیست یا ویدیو ابعادی ندارد. لطفاً لحظه‌ای صبر کرده و دوباره تلاش کنید."
+            }
         },
         proAthletePlatform: {
             hero: {
@@ -1038,6 +1212,138 @@ const translations: Record<string, any> = {
             createContentButton: "ایجاد محتوا در این موضوع",
             contentCreationTitle: "ایجاد محتوا",
         },
+        baristaStyler: {
+            title: "طراح هوشمند باریستا و کافه",
+            subtitle: "حال و هوا و تم کافه خود را توصیف کنید تا هوش مصنوعی ما یک هویت بصری و شنیداری کامل برای برند شما ایجاد کند.",
+            descriptionLabel: "فضای کافه خود را توصیف کنید",
+            descriptionPlaceholder: "مثال: «یک کافه دنج و روستایی با چوب فراوان، گیاهان و نور گرم، با تمرکز بر قهوه تخصصی و شیرینی‌های خانگی.»",
+            buttonText: "ایجاد استایل",
+            generating: "در حال ایجاد استایل...",
+            placeholder: "استایل تولید شده شما در اینجا نمایش داده می‌شود. با توصیف حال و هوای کافه خود شروع کنید.",
+            resultsTitle: "استایل کافه تولید شده توسط هوش مصنوعی",
+            femaleStyle: "یونیفرم باریستای زن",
+            maleStyle: "یونیفرم باریستای مرد",
+            counterDesign: "طراحی کانتر و فضا",
+            musicTheme: "تم موسیقی پیشنهادی",
+            generatingImage: "در حال تولید...",
+            imageFailed: "تولید تصویر ناموفق بود.",
+            validationError: "لطفا قبل از ایجاد استایل، فضای کافه خود را توصیف کنید."
+        },
+        analyticsPage: {
+            title: "تحلیل سایت",
+            subtitle: "نمای کلی لحظه‌ای از عملکرد وب‌سایت و تعامل مخاطبان.",
+            refreshButton: "به‌روزرسانی داده‌ها",
+            liveVisitors: "بازدیدکنندگان زنده",
+            today: "امروز",
+            thisWeek: "این هفته",
+            thisMonth: "این ماه",
+            topCountries: "کشورهای برتر بر اساس بازدید",
+            trafficSources: "منابع ترافیک",
+            deviceBreakdown: "تفکیک دستگاه‌ها",
+            topPages: "پربازدیدترین صفحات",
+            page: "صفحه",
+            views: "بازدید",
+            howToConnect: "درباره این داشبورد",
+            howToConnectBody: "این یک شبیه‌سازی مبتنی بر هوش مصنوعی از یک داشبورد تحلیلی واقعی است. داده‌ها به صورت فرضی توسط Gemini تولید شده‌اند تا امکانات موجود را نمایش دهند. برای دریافت داده‌های واقعی برای وب‌سایت خود، معمولاً باید سرویسی مانند Google Analytics را ادغام کنید. این کار شامل افزودن یک اسکریپت ردیابی به سایت شما و سپس استفاده از API گوگل آنالیتیکس با احراز هویت امن (OAuth 2.0) برای دریافت و نمایش داده‌های زنده در داشبوردی مانند این است.",
+        },
+        postureAnalysisPage: {
+            title: "تحلیل هوشمند وضعیت بدن و حرکت",
+            subtitle: "استفاده از بینایی کامپیوتری برای تحلیل بیومکانیک شما، با الهام از اصول Kinematum.",
+            instructionsTitle: "چگونه کار می‌کند",
+            instructions: [
+                "۱. نوع تحلیل 'وضعیت ایستا' یا 'اسکات' را در پایین انتخاب کنید.",
+                "۲. دکمه 'شروع دوربین' را فشار دهید و در صورت درخواست، مجوزها را تایید کنید.",
+                "۳. بدن خود را مطابق با ژست نمونه قرار دهید. اطمینان حاصل کنید که تمام بدن شما قابل مشاهده است.",
+                "۴. برای ثبت عکس و ارسال برای تحلیل هوش مصنوعی، روی 'تحلیل کن' کلیک کنید."
+            ],
+            startCamera: "شروع دوربین",
+            stopCamera: "توقف دوربین",
+            cameraError: "دسترسی به دوربین امکان‌پذیر نیست. لطفاً مجوزهای مرورگر خود را بررسی کنید.",
+            analysisType: "نوع تحلیل",
+            posture: "وضعیت ایستا",
+            squat: "حرکت اسکات",
+            analyzePosture: "تحلیل وضعیت بدن",
+            analyzeSquat: "تحلیل اسکات",
+            analyzing: "در حال تحلیل...",
+            resultsTitle: "تحلیل شما",
+            summary: "خلاصه",
+            keyObservations: "مشاهدات کلیدی",
+            correctiveExercises: "تمرینات اصلاحی",
+            severity: "شدت",
+            placeholder: "نتایج تحلیل شما پس از ثبت در اینجا نمایش داده می‌شود.",
+            getStarted: "برای شروع، دوربین خود را فعال کرده و با ژست نمونه هماهنگ شوید.",
+            samplePose: "ژست نمونه",
+            yourCamera: "دوربین شما",
+            visualizeCorrection: "تجسم اصلاح",
+            visualizing: "در حال تجسم...",
+            visualizationTitle: "تجسم اصلاحی",
+            before: "وضعیت فعلی شما",
+            after: "بهبود بالقوه",
+            close: "بستن",
+            visualizationError: "امکان تولید تصویر وجود نداشت.",
+        },
+        profilePage: {
+            title: "پروفایل من",
+            subtitle: "پروفایل، تنظیمات و برنامه‌های ذخیره شده خود را مدیریت کنید.",
+            welcome: "خوش آمدید، کاربر اورا",
+            userInfo: "اطلاعات کاربری",
+            email: "ایمیل",
+            mockEmail: "user@aura-ai.com (نمایشی)",
+            settings: "تنظیمات",
+            language: "زبان",
+            myPlans: "برنامه‌های ذخیره شده من",
+            view: "مشاهده"
+        },
+        datingSimulator: {
+            title: "مربی مکالمه هوشمند",
+            subtitle: "مهارت‌های اجتماعی خود را در یک محیط امن و هدایت‌شده تقویت کنید. مکالمات را تمرین کرده و بازخورد فوری دریافت کنید."
+        },
+        coach: {
+            explorePaths: "کاوش مسیرهای آموزشی",
+            fullReset: "ریست مربی",
+            partnerSelectLabel: "تمرین با:",
+            partners: [
+                { id: 'supportive', name: 'همراه و همدل' },
+                { id: 'direct', name: 'رک و منطقی' },
+                { id: 'playful', name: 'شوخ و پرانرژی' },
+                { id: 'reserved', name: 'متفکر و آرام' },
+            ],
+            trainingMode: "حالت تمرین",
+            endSessionButton: "تحلیل گفتگو",
+            messagePlaceholder: "پیام خود را تایپ کنید...",
+            trainingPathsTitle: "مسیرهای آموزش مکالمه",
+            trainingPathsSubtitle: "برای تمرکز بر مهارت‌های خاص مکالمه از طریق سناریوهای هدایت‌شده، یک مسیر را انتخاب کنید.",
+            startPathButton: "شروع مسیر",
+            exitTraining: "خروج از تمرین",
+            practiceButton: "تمرین",
+            difficultyTitle: "انتخاب سطح سختی",
+            easy: "آسان",
+            hard: "سخت",
+            easyReward: "پاداش",
+            hardReward: "پاداش",
+            selectButton: "انتخاب",
+            scenarioEnded: "سناریو تمام شد! می‌توانید سناریوی دیگری را انتخاب کنید یا از تمرین خارج شوید.",
+            scenarioStartPrompt: "صحنه آماده است. چگونه شروع می‌کنید؟",
+            analyzing: "در حال تحلیل گفتگوی شما...",
+            analysisTitle: "تحلیل گفتگو",
+            goalAnalysisTitle: "تحلیل دور تمرین",
+            scores: {
+                rapport: "ارتباط",
+                curiosity: "کنجکاوی",
+                vulnerability: "آسیب‌پذیری",
+                confidence: "اعتماد به نفس"
+            },
+            strengths: "نقاط قوت",
+            improvements: "زمینه‌های بهبود",
+            pathSuggestionTitle: "آموزش پیشنهادی",
+            startThisPath: "این مسیر را شروع کن",
+            nextPractice: "دور بعدی",
+            endPractice: "پایان تمرین",
+            finishAndReview: "پایان و بررسی",
+            startNewChat: "شروع گفتگوی جدید",
+            endScenarioButton: "پایان سناریو",
+            analysisPlaceholder: "تحلیل گفتگوی شما پس از کلیک بر روی 'تحلیل گفتگو' در اینجا نمایش داده می‌شود."
+        },
     },
     ar: {
         // Arabic translations would go here, following the same structure.
@@ -1063,7 +1369,6 @@ export type Page =
   | 'home'
   | 'skin_consultation'
   | 'fitness_assessment'
-  | 'movement_analysis'
   | 'location_finder'
   | 'ai_consultant'
   | 'market_trends'
@@ -1078,7 +1383,13 @@ export type Page =
   | 'join_us'
   | 'download_app'
   | 'content_creator'
-  | 'trend_hub';
+  | 'trend_hub'
+  | 'posture_analysis'
+  | 'conversation_coach'
+  | 'barista_styler'
+  | 'analytics'
+  | 'live_beauty_coach'
+  | 'user_profile';
 
 export type SurgeryType = 'rhinoplasty' | 'blepharoplasty' | 'genioplasty' | 'lipAugmentation' | 'facelift' | 'jawSurgery';
 
@@ -1135,6 +1446,12 @@ export const useLanguage = () => {
 
 // --- App Data Structures ---
 
+export interface ProductRecommendation {
+    name: string;
+    description: string;
+    link: string;
+}
+
 export type MarketAnalysisMode = 'quick' | 'in-depth' | 'swot';
 
 export interface SymptomDetails {
@@ -1156,6 +1473,9 @@ export interface IdentifiedCondition {
     isLoadingFurtherReading?: boolean;
     furtherReadingError?: string | null;
     suggestedStep: string;
+    generatedImageBase64?: string | null;
+    isGeneratingImage?: boolean;
+    generationError?: string | null;
 }
 
 export interface TreatmentSuggestion {
@@ -1243,10 +1563,6 @@ export interface ComprehensiveFitnessResult {
     generalRecommendations: string[];
     workoutPlan: WorkoutPlan;
     dietPlan: DietPlan;
-    postureAnalysis: {
-        observations: string[];
-        recommendations: string[];
-    } | null;
 }
 
 
@@ -1472,19 +1788,59 @@ export interface SearchTrend {
     search_volume: 'High' | 'Medium' | 'Low';
 }
 
-export interface KineticAnalysisResult {
-    keyMetrics: {
-        metric: string;
-        value: string;
-        explanation: string;
-    }[];
-    performanceInsights: string[];
-    correctiveDrills: {
-        drill: string;
-        description: string;
-    }[];
-    suggestedSpecialistQuery: string;
-    suggestedSpecialistCategory: 'coaches' | 'doctors';
+// --- Analytics Types ---
+export interface SiteAnalyticsData {
+  liveVisitors: number;
+  todayVisitors: number;
+  weeklyVisitors: number;
+  monthlyVisitors: number;
+  topCountries: { country: string; visitors: number; flag: string; }[];
+  trafficSources: { source: string; percentage: number; }[];
+  deviceBreakdown: { device: string; percentage: number; }[];
+  topPages: { path: string; views: number; }[];
+}
+
+// --- Posture Analysis Types ---
+export interface PostureObservation {
+  observation: string;
+  description: string;
+  severity: 'Low' | 'Medium' | 'High';
+}
+
+export interface HighlightShapeCircle {
+  type: 'circle';
+  cx: number; // 0-100
+  cy: number; // 0-100
+  r: number;  // 0-100
+}
+
+export interface HighlightShapeLine {
+  type: 'line';
+  x1: number; // 0-100
+  y1: number; // 0-100
+  x2: number; // 0-100
+  y2: number; // 0-100
+}
+
+export type HighlightShape = HighlightShapeCircle | HighlightShapeLine;
+
+export interface CorrectiveExercise {
+  name: string;
+  description: string;
+  sets: string;
+  reps: string;
+  rest: string;
+  generatedImageBase64?: string | null;
+  isGenerating?: boolean;
+  generationError?: string | null;
+  highlightShapes?: HighlightShape[] | null;
+  isGeneratingHighlights?: boolean;
+}
+
+export interface PostureAnalysisResult {
+  summary: string;
+  keyObservations: PostureObservation[];
+  correctiveExercises: CorrectiveExercise[];
 }
 
 

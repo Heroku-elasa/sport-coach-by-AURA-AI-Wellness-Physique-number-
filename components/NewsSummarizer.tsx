@@ -109,6 +109,7 @@ const MarketTrendsPage: React.FC<MarketTrendsPageProps> = ({ handleApiError }) =
         setError(null);
         setResult(null);
         try {
+            // FIX: generateMarketAnalysis was not exported from geminiService
             const rawResult = await geminiService.generateMarketAnalysis(searchQuery, language, mode);
             const parsedResult = parseMarketAnalysis(rawResult, mode);
             setResult(parsedResult);

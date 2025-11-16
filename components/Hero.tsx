@@ -16,7 +16,7 @@ const Icon: React.FC<{ name: string, className?: string }> = ({ name, className 
         case 'laser': return <svg xmlns="http://www.w3.org/2000/svg" className={cosmeticClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>;
         case 'injectables': return <svg xmlns="http://www.w3.org/2000/svg" className={cosmeticClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
         case 'facial': return <svg xmlns="http://www.w3.org/2000/svg" className={cosmeticClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.182 15.182a4.5 4.5 0 01-6.364 0M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9 9.75h.008v.008H9V9.75zm6 0h.008v.008H15V9.75z" /></svg>;
-        case 'skincare': return <svg xmlns="http://www.w3.org/2000/svg" className={cosmeticClass} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.47 2.118 2.25 2.25 0 01-2.47-2.118c0-.62.28-1.2.752-1.584.572-.472.93-1.204.93-2.002a2.25 2.25 0 00-2.25-2.25c-.832 0-1.612.445-2.031 1.212a3 3 0 00-4.134 4.134 2.25 2.25 0 012.118 2.47 2.25 2.25 0 01-2.118 2.47c-1.196 0-2.242-.88-2.47-2.118a3 3 0 00-1.128-5.78 2.25 2.25 0 01-2.118-2.47c.228-1.238 1.272-2.282 2.51-2.47a3 3 0 005.78-1.128 2.25 2.25 0 012.47-2.118 2.25 2.25 0 012.47 2.118c0 .62-.28 1.2-.752-1.584-.572-.472-.93 1.204-.93 2.002a2.25 2.25 0 002.25 2.25c.832 0 1.612.445 2.031 1.212a3 3 0 004.134-4.134 2.25 2.25 0 01-2.118-2.47 2.25 2.25 0 012.118-2.47c1.196 0 2.242.88 2.47 2.118a3 3 0 001.128 5.78z" /></svg>;
+        case 'skincare': return <svg xmlns="http://www.w3.org/2000/svg" className={cosmeticClass} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.47 2.118 2.25 2.25 0 01-2.47-2.118c0-.62.28-1.2.752-1.584.572-.472.93-1.204.93-2.002a2.25 2.25 0 00-2.25-2.25c-.832 0-1.612.445-2.031 1.212a3 3 0 00-4.134 4.134 2.25 2.25 0 012.118 2.47 2.25 2.25 0 01-2.118 2.47c-1.196 0-2.242-.88-2.47-2.118a3 3 0 00-1.128-5.78 2.25 2.25 0 01-2.118-2.47c.228-1.238 1.272-2.282 2.51-2.47a3 3 0 005.78-1.128 2.25 2.25 0 012.47-2.118 2.25 2.25 0 012.47 2.118c0 .62-.28 1.2-.752 1.584-.572-.472-.93 1.204-.93 2.002a2.25 2.25 0 002.25 2.25c.832 0 1.612.445 2.031 1.212a3 3 0 004.134-4.134 2.25 2.25 0 01-2.118-2.47 2.25 2.25 0 012.118-2.47c1.196 0 2.242.88 2.47 2.118a3 3 0 001.128 5.78z" /></svg>;
         // Fitness
         case 'workout': return <svg xmlns="http://www.w3.org/2000/svg" className={fitnessClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" /><path d="M4.5 10.5h15" /></svg>;
         case 'nutrition': return <svg xmlns="http://www.w3.org/2000/svg" className={fitnessClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.25278C12 6.25278 6.25 3.00001 3.75 3.00001C1.25 3.00001 0 5.25278 0 7.75278C0 11.2528 3.75 14.2528 3.75 14.2528C3.75 14.2528 3.75 21 7.5 21C11.25 21 11.25 14.2528 11.25 14.2528C11.25 14.2528 15 11.2528 15 7.75278C15 5.25278 13.75 3.00001 11.25 3.00001C8.75 3.00001 3.75 6.25278 3.75 6.25278" /><path d="M12.75 21C16.5 21 16.5 14.2528 16.5 14.2528C16.5 14.2528 20.25 11.2528 20.25 7.75278C20.25 5.25278 19 3.00001 16.5 3.00001C14 3.00001 8.25 6.25278 8.25 6.25278" /></svg>;
@@ -52,27 +52,51 @@ const HomePage: React.FC<HomePageProps> = ({ setPage }) => {
             dangerouslySetInnerHTML={{ __html: t('hero.title') }}
           />
           <p className="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto">{t('hero.subtitle')}</p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+          <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-4 pt-4">
               <button
                 onClick={() => setPage('skin_consultation')}
-                className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-rose-500 to-pink-500 text-white font-bold rounded-lg hover:from-rose-600 hover:to-pink-600 transition-all text-lg shadow-lg hover:shadow-rose-500/40 transform duration-300 hover:scale-105 flex items-center justify-center"
+                className="flex items-center justify-center px-8 py-4 bg-gradient-to-r from-rose-500 to-pink-500 text-white font-bold rounded-lg hover:from-rose-600 hover:to-pink-600 transition-all text-lg shadow-lg hover:shadow-rose-500/40 transform duration-300 hover:scale-105"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 rtl:ml-3 rtl:mr-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                <span>{t('hero.button1')}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 rtl:ml-3 rtl:mr-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.182 15.182a4.5 4.5 0 01-6.364 0M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9 9.75h.008v.008H9V9.75zm6 0h.008v.008H15V9.75z" />
+                </svg>
+                {t('hero.button1')}
               </button>
               <button
                 onClick={() => setPage('fitness_assessment')}
-                className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold rounded-lg hover:from-teal-600 hover:to-cyan-600 transition-all text-lg shadow-lg hover:shadow-teal-500/40 transform duration-300 hover:scale-105 animate-pulse-glow flex items-center justify-center"
+                className="flex items-center justify-center px-8 py-4 bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold rounded-lg hover:from-teal-600 hover:to-cyan-600 transition-all text-lg shadow-lg hover:shadow-teal-500/40 transform duration-300 hover:scale-105 animate-pulse-glow"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 rtl:ml-3 rtl:mr-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                <span>{t('hero.button2')}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 rtl:ml-3 rtl:mr-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                {t('hero.button2')}
+              </button>
+               <button
+                onClick={() => setPage('live_beauty_coach')}
+                className="flex items-center justify-center px-8 py-4 bg-gradient-to-r from-fuchsia-500 to-purple-500 text-white font-bold rounded-lg hover:from-fuchsia-600 hover:to-purple-600 transition-all text-lg shadow-lg hover:shadow-fuchsia-500/40 transform duration-300 hover:scale-105"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 rtl:ml-3 rtl:mr-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                {t('hero.button5')}
               </button>
               <button
-                onClick={() => setPage('movement_analysis')}
-                className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold rounded-lg hover:from-indigo-600 hover:to-purple-600 transition-all text-lg shadow-lg hover:shadow-indigo-500/40 transform duration-300 hover:scale-105 flex items-center justify-center"
+                onClick={() => setPage('posture_analysis')}
+                className="flex items-center justify-center px-8 py-4 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-bold rounded-lg hover:from-purple-600 hover:to-indigo-600 transition-all text-lg shadow-lg hover:shadow-purple-500/40 transform duration-300 hover:scale-105"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 rtl:ml-3 rtl:mr-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15.91 15.91a2.502 2.502 0 0 0-3.32 0M10.5 12h.008v.008h-.008V12Zm.008 3.492v.008h-.008v-.008h.008Zm4.288-3.5h.008v.008h-.008V12Zm-1.884 5.25v.008h-.008v-.008h.008ZM12 10.5h.008v.008h-.008v-.008ZM12 3.75v.008H12V3.75Zm0 16.5v-.008H12v.008Zm-4.992-12h-.008v.008h.008V8.25Zm0 7.5h.008v.008h-.008v-.008Zm13.484-7.5h.008v.008h-.008V8.25Zm0 7.5h-.008v.008h.008v-.008Z" /></svg>
-                <span>{t('hero.button3')}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 rtl:ml-3 rtl:mr-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2m8-10a4 4 0 100-8 4 4 0 000 8z" />
+                </svg>
+                {t('hero.button3')}
+              </button>
+               <button
+                onClick={() => setPage('conversation_coach')}
+                className="flex items-center justify-center px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold rounded-lg hover:from-amber-600 hover:to-orange-600 transition-all text-lg shadow-lg hover:shadow-amber-500/40 transform duration-300 hover:scale-105"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 rtl:ml-3 rtl:mr-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                   <path strokeLinecap="round" strokeLinejoin="round" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a2 2 0 01-2-2V7a2 2 0 012-2h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 00.707.293H17z" />
+                </svg>
+                {t('hero.button4')}
               </button>
           </div>
         </div>

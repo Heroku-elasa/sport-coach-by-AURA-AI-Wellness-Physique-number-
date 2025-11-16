@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useLanguage, PostureAnalysisResult } from '../types';
+import { useLanguage, PostureAnalysisResult, CorrectiveExercise, HighlightShape } from '../types';
+import { visualizePostureCorrection, generatePostureHighlights } from '../services/geminiService';
 
 interface PostureAnalysisPageProps {
-    onAnalyze: (imageBase64: string, mimeType: string, analysisType: 'posture' | 'squat' | 't-pose' | 'face') => void;
+    onAnalyze: (imageBase64: string, mimeType: string, analysisType: 'posture' | 'squat') => void;
     isLoading: boolean;
     result: PostureAnalysisResult | null;
     isQuotaExhausted: boolean;
@@ -12,35 +13,30 @@ interface PostureAnalysisPageProps {
 // URLs for sample images
 const POSTURE_SAMPLE_URL = 'https://images.unsplash.com/photo-1599838634969-a88a45aa86a2?q=80&w=800&auto=format&fit=crop';
 const SQUAT_SAMPLE_URL = 'https://images.unsplash.com/photo-1599058917212-d750089bc07e?q=80&w=800&auto=format&fit=crop';
-const TPOSE_SAMPLE_URL = 'https://images.unsplash.com/photo-1617964022345-537c0679632e?q=80&w=800&auto=format&fit=crop';
 
 
 const PostureAnalysisPage: React.FC<PostureAnalysisPageProps> = ({ onAnalyze, isLoading, result, isQuotaExhausted, handleApiError }) => {
-    const { t } = useLanguage();
+    const { language, t } = useLanguage();
     const [isCameraOn, setIsCameraOn] = useState(false);
     const [cameraError, setCameraError] = useState<string | null>(null);
-    const [analysisType, setAnalysisType] = useState<'posture' | 'squat' | 't-pose' | 'face'>('posture');
+    const [analysisType, setAnalysisType] = useState<'posture' | 'squat'>('posture');
     const [sampleImage, setSampleImage] = useState(POSTURE_SAMPLE_URL);
+    
+    const [originalAnalysisImage, setOriginalAnalysisImage] = useState<{base64: string, mimeType: string} | null>(null);
+    const [exercisesWithState, setExercisesWithState] = useState<CorrectiveExercise[]>([]);
+    const [modalContent, setModalContent] = useState<{ original: string; generated: string; title: string; shapes: HighlightShape[] | null } | null>(null);
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const streamRef = useRef<MediaStream | null>(null);
 
     useEffect(() => {
-        switch (analysisType) {
-            case 'posture':
-                setSampleImage(POSTURE_SAMPLE_URL);
-                break;
-            case 'squat':
-                setSampleImage(SQUAT_SAMPLE_URL);
-                break;
-            case 't-pose':
-                setSampleImage(TPOSE_SAMPLE_URL);
-                break;
-            default:
-                setSampleImage(POSTURE_SAMPLE_URL);
-        }
+        setSampleImage(analysisType === 'posture' ? POSTURE_SAMPLE_URL : SQUAT_SAMPLE_URL);
     }, [analysisType]);
+    
+    useEffect(() => {
+        setExercisesWithState(result?.correctiveExercises.map(ex => ({...ex, isGenerating: false, generatedImageBase64: null, generationError: null })) || []);
+    }, [result]);
 
     const cleanupCamera = useCallback(() => {
         if (streamRef.current) {
@@ -66,6 +62,7 @@ const PostureAnalysisPage: React.FC<PostureAnalysisPageProps> = ({ onAnalyze, is
             streamRef.current = stream;
             if (videoRef.current) {
                 videoRef.current.srcObject = stream;
+                await videoRef.current.play();
             }
             setIsCameraOn(true);
         } catch (err) {
@@ -90,7 +87,6 @@ const PostureAnalysisPage: React.FC<PostureAnalysisPageProps> = ({ onAnalyze, is
         const context = canvas.getContext('2d');
         if (!context) return;
         
-        // Flip the context horizontally to match the mirrored video feed before drawing
         context.translate(canvas.width, 0);
         context.scale(-1, 1);
         
@@ -98,7 +94,86 @@ const PostureAnalysisPage: React.FC<PostureAnalysisPageProps> = ({ onAnalyze, is
         const dataUrl = canvas.toDataURL('image/jpeg');
         const base64 = dataUrl.split(',')[1];
         
+        setOriginalAnalysisImage({ base64, mimeType: 'image/jpeg' });
         onAnalyze(base64, 'image/jpeg', analysisType);
+    };
+    
+    const handleVisualize = async (exerciseIndex: number) => {
+        if (!originalAnalysisImage || !result) return;
+
+        const exercise = exercisesWithState[exerciseIndex];
+        if (!exercise) return;
+
+        // Step 1: Generate the corrected image
+        setExercisesWithState(prev => {
+            const newExercises = [...prev];
+            newExercises[exerciseIndex] = { ...newExercises[exerciseIndex], isGenerating: true, generationError: null, highlightShapes: null, isGeneratingHighlights: false };
+            return newExercises;
+        });
+
+        let generatedBase64: string;
+        try {
+            generatedBase64 = await visualizePostureCorrection(
+                originalAnalysisImage.base64,
+                originalAnalysisImage.mimeType,
+                result.summary,
+                exercise.name,
+                language
+            );
+            
+            setExercisesWithState(prev => {
+                const newExercises = [...prev];
+                newExercises[exerciseIndex] = { ...newExercises[exerciseIndex], isGenerating: false, generatedImageBase64: generatedBase64, isGeneratingHighlights: true };
+                return newExercises;
+            });
+        } catch (err) {
+            const msg = handleApiError(err);
+            setExercisesWithState(prev => {
+                const newExercises = [...prev];
+                newExercises[exerciseIndex] = { ...newExercises[exerciseIndex], isGenerating: false, generationError: t('postureAnalysisPage.visualizationError') };
+                return newExercises;
+            });
+            return; // Stop if image generation fails
+        }
+
+        // Step 2: Generate the highlights
+        try {
+            const shapes = await generatePostureHighlights(
+                originalAnalysisImage.base64,
+                generatedBase64,
+                originalAnalysisImage.mimeType,
+                language
+            );
+
+            setExercisesWithState(prev => {
+                const newExercises = [...prev];
+                newExercises[exerciseIndex] = { ...newExercises[exerciseIndex], isGeneratingHighlights: false, highlightShapes: shapes };
+                return newExercises;
+            });
+
+            setModalContent({
+                original: originalAnalysisImage.base64,
+                generated: generatedBase64,
+                title: exercise.name,
+                shapes: shapes
+            });
+
+        } catch (err) {
+            const msg = handleApiError(err);
+            console.error("Highlight generation failed:", msg);
+            // Fallback: Show the modal without highlights.
+            setExercisesWithState(prev => {
+                const newExercises = [...prev];
+                newExercises[exerciseIndex] = { ...newExercises[exerciseIndex], isGeneratingHighlights: false, highlightShapes: null };
+                return newExercises;
+            });
+            setModalContent({
+                original: originalAnalysisImage.base64,
+                generated: generatedBase64,
+                title: exercise.name,
+                shapes: null
+            });
+        }
     };
 
     const severityStyles: Record<string, string> = {
@@ -155,17 +230,6 @@ const PostureAnalysisPage: React.FC<PostureAnalysisPageProps> = ({ onAnalyze, is
                                     <button onClick={() => setAnalysisType('squat')} className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${analysisType === 'squat' ? 'bg-teal-600 text-white' : 'text-gray-400 hover:bg-gray-700'}`}>
                                         {t('postureAnalysisPage.squat')}
                                     </button>
-                                     <button onClick={() => setAnalysisType('t-pose')} className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${analysisType === 't-pose' ? 'bg-teal-600 text-white' : 'text-gray-400 hover:bg-gray-700'}`}>
-                                        T-Pose
-                                    </button>
-                                    <button onClick={() => setAnalysisType('face')} className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${analysisType === 'face' ? 'bg-teal-600 text-white' : 'text-gray-400 hover:bg-gray-700'}`}>
-                                        {t('postureAnalysisPage.face')}
-                                    </button>
-                                </div>
-                                 <div className="grid grid-cols-1 gap-2 p-1 bg-gray-900/50 rounded-lg border border-gray-700 mt-2">
-                                    <button disabled className="px-4 py-2 text-sm font-semibold rounded-md transition-colors text-gray-500 bg-gray-800 cursor-not-allowed">
-                                        {t('postureAnalysisPage.live')}
-                                    </button>
                                 </div>
                             </div>
                             <button onClick={handleAnalyze} disabled={isLoading || isQuotaExhausted} className="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-md transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed">
@@ -204,14 +268,64 @@ const PostureAnalysisPage: React.FC<PostureAnalysisPageProps> = ({ onAnalyze, is
                                 </div>
                             </div>
                             <div>
-                                <h3 className="font-semibold text-teal-300 mb-2">{t('postureAnalysisPage.correctiveExercises')}</h3>
-                                <div className="space-y-3">
-                                     {result.correctiveExercises.map(ex => (
-                                        <div key={ex.name} className="p-3 bg-gray-900/50 rounded-md">
-                                            <h4 className="font-semibold text-white">{ex.name} <span className="text-xs font-normal text-gray-400">({ex.repsAndSets})</span></h4>
-                                            <p className="text-xs text-gray-400 mt-1">{ex.description}</p>
-                                        </div>
-                                    ))}
+                                <h3 className="font-semibold text-teal-300 mb-4">{t('postureAnalysisPage.correctiveExercises')}</h3>
+                                <div className="overflow-x-auto bg-gray-900/50 rounded-lg border border-gray-700">
+                                    <table className="min-w-full text-sm">
+                                        <thead className="border-b border-gray-700">
+                                            <tr className="text-left text-xs text-gray-200 uppercase font-bold tracking-wider">
+                                                <th className="p-3">{t('assessment.report.exercise')}</th>
+                                                <th className="p-3 text-center">{t('assessment.report.sets')}</th>
+                                                <th className="p-3 text-center">{t('assessment.report.reps')}</th>
+                                                <th className="p-3 text-center">{t('assessment.report.rest')}</th>
+                                                <th className="p-3 text-center">{t('assessment.report.video')}</th>
+                                                <th className="p-3 text-center">{t('postureAnalysisPage.visualizeCorrection')}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-800">
+                                            {exercisesWithState.map((ex, index) => (
+                                                <tr key={ex.name}>
+                                                    <td className="p-3">
+                                                        <p className="font-semibold text-white">{ex.name}</p>
+                                                        <p className="text-xs text-gray-400 mt-1">{ex.description}</p>
+                                                    </td>
+                                                    <td className="p-3 text-center font-mono font-medium text-teal-300">{ex.sets}</td>
+                                                    <td className="p-3 text-center font-mono font-medium text-teal-300">{ex.reps}</td>
+                                                    <td className="p-3 text-center font-mono font-medium text-teal-300">{ex.rest}</td>
+                                                    <td className="p-3 text-center">
+                                                        <a 
+                                                            href={`https://www.youtube.com/results?search_query=how+to+do+${encodeURIComponent(ex.name)}`} 
+                                                            target="_blank" 
+                                                            rel="noopener noreferrer"
+                                                            title={`Watch video for ${ex.name}`}
+                                                            className="inline-block text-teal-300 hover:text-teal-100 transition-transform transform hover:scale-125"
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                                                            </svg>
+                                                        </a>
+                                                    </td>
+                                                    <td className="p-3 text-center">
+                                                        <button
+                                                            onClick={() => handleVisualize(index)}
+                                                            disabled={ex.isGenerating || ex.isGeneratingHighlights || isQuotaExhausted}
+                                                            title={t('postureAnalysisPage.visualizeCorrection')}
+                                                            className="p-2 rounded-full text-rose-300 bg-rose-800/70 hover:bg-rose-700 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
+                                                        >
+                                                            {ex.isGenerating || ex.isGeneratingHighlights ? (
+                                                                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                                            ) : (
+                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                                    <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v1.046a1 1 0 01-1.28.962l-2.094-.7a1 1 0 01-.192-1.662l.533-.71a1 1 0 011.336 0l.903.602zM11.3 1.046l.903.602a1 1 0 001.336 0l.533-.71a1 1 0 00-.192-1.662l-2.094-.7a1 1 0 00-1.28.962V2a1 1 0 00.7.954zM10 7a1 1 0 011 1v1a1 1 0 11-2 0V8a1 1 0 011-1zm3.342 5.158a1 1 0 01-1.21.373l-.433-.217a1 1 0 01-.373-1.21l1.082-2.164a1 1 0 011.21-.373l.433.217a1 1 0 01.373 1.21l-1.082 2.164zM10 17a1 1 0 011 1v1.046a1 1 0 11-2 0V18a1 1 0 011-1zm-3.342-5.158a1 1 0 01-1.21-.373l-1.082-2.164a1 1 0 01.373-1.21l.433-.217a1 1 0 011.21.373l1.082 2.164a1 1 0 01-.373 1.21l-.433.217z" clipRule="evenodd" />
+                                                                    <path d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" />
+                                                                </svg>
+                                                            )}
+                                                        </button>
+                                                        {ex.generationError && <p className="text-xs text-red-400 mt-1">{ex.generationError}</p>}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
@@ -232,6 +346,71 @@ const PostureAnalysisPage: React.FC<PostureAnalysisPageProps> = ({ onAnalyze, is
                     )}
                 </div>
             </div>
+            
+            {modalContent && (
+                <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 animate-fade-in" onClick={() => setModalContent(null)}>
+                    <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col border border-gray-700 m-4" onClick={e => e.stopPropagation()}>
+                        <header className="p-4 border-b border-gray-700 flex justify-between items-center">
+                            <h3 className="text-lg font-semibold text-white">{t('postureAnalysisPage.visualizationTitle')}: <span className="text-rose-300">{modalContent.title}</span></h3>
+                            <button onClick={() => setModalContent(null)} className="p-2 rounded-full text-gray-400 hover:bg-gray-700 hover:text-white" aria-label={t('postureAnalysisPage.close')}>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </header>
+                        <main className="p-6 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div>
+                                <h4 className="text-center font-bold text-gray-300 mb-2">{t('postureAnalysisPage.before')}</h4>
+                                <img src={`data:image/jpeg;base64,${modalContent.original}`} alt="Before correction" className="rounded-lg w-full aspect-[3/4] object-cover" />
+                            </div>
+                            <div>
+                                <h4 className="text-center font-bold text-gray-300 mb-2">{t('postureAnalysisPage.after')}</h4>
+                                <div className="relative">
+                                    <img src={`data:image/png;base64,${modalContent.generated}`} alt="After correction" className="rounded-lg w-full aspect-[3/4] object-cover" />
+                                    {modalContent.shapes && modalContent.shapes.length > 0 && (
+                                        <svg
+                                            viewBox="0 0 100 100"
+                                            preserveAspectRatio="none"
+                                            className="absolute inset-0 w-full h-full pointer-events-none"
+                                        >
+                                            {modalContent.shapes.map((shape, index) => {
+                                                if (shape.type === 'circle') {
+                                                    return (
+                                                        <circle
+                                                            key={index}
+                                                            cx={shape.cx}
+                                                            cy={shape.cy}
+                                                            r={shape.r}
+                                                            fill="none"
+                                                            stroke="rgba(251, 113, 133, 0.9)"
+                                                            strokeWidth="1"
+                                                            className="animate-stroke-pulse"
+                                                        />
+                                                    );
+                                                }
+                                                if (shape.type === 'line') {
+                                                    return (
+                                                        <line
+                                                            key={index}
+                                                            x1={shape.x1}
+                                                            y1={shape.y1}
+                                                            x2={shape.x2}
+                                                            y2={shape.y2}
+                                                            stroke="rgba(20, 184, 166, 0.9)"
+                                                            strokeWidth="1"
+                                                            strokeDasharray="4 2"
+                                                            className="line-draw"
+                                                        />
+                                                    );
+                                                }
+                                                return null;
+                                            })}
+                                        </svg>
+                                    )}
+                                </div>
+                            </div>
+                        </main>
+                    </div>
+                </div>
+            )}
             <canvas ref={canvasRef} className="hidden"></canvas>
         </div>
     );
