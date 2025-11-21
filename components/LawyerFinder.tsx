@@ -1,6 +1,4 @@
-
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-// FIX: Added missing import for generateSpecialists
 import { generateSpecialists } from '../services/geminiService';
 import { SpecialistProfile, ConsultationResult } from '../types';
 import { useLanguage } from '../types';

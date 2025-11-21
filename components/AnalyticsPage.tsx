@@ -175,7 +175,8 @@ const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data, isLoading, onRefres
                             </div>
                             <div className="bg-gray-800/50 p-6 rounded-lg border border-white/10">
                                 <h3 className="text-lg font-bold text-white mb-4">{t('analyticsPage.deviceBreakdown')}</h3>
-                                <BarChart data={data.deviceBreakdown} />
+{/* FIX: Map the deviceBreakdown data to match the { source, percentage } structure expected by the BarChart component. */}
+                                <BarChart data={data.deviceBreakdown.map(item => ({ source: item.device, percentage: item.percentage }))} />
                             </div>
                         </div>
                     </div>

@@ -27,10 +27,10 @@ import PostureAnalysisPage from './components/PostureAnalysisPage';
 import UserProfilePage from './components/UserProfilePage';
 import ConversationCoach from './components/DatingSimulator';
 import LiveBeautyCoachPage from './components/LiveBeautyCoachPage';
+import ErrorBoundary from './components/ErrorBoundary';
 import { Page, SavedConsultation, ProviderSearchResult, Message, SearchResultItem, useLanguage, BaristaStyleResult, SiteAnalyticsData, PostureAnalysisResult, ConversationCoachState, TrainingPath, TrainingScenario, Difficulty, Goal, ProductRecommendation } from './types';
 import { useToast } from './components/Toast';
 import { initDB, saveConsultation as saveDb, getAllSavedConsultations, deleteConsultation as deleteDb } from './services/dbService';
-// FIX: Added missing imports for geminiService functions
 import { performSemanticSearch, findLocalProviders, generateBaristaImage, generateBaristaMusicTheme, generateSiteAnalytics, analyzePostureAndMovement, sendCoachMessage, analyzeConversation, suggestTrainingPaths, performLiveBeautification, getBeautyRecommendations } from './services/geminiService';
 import { TRAINING_PATHS } from './constants';
 
@@ -640,7 +640,9 @@ const App: React.FC = () => {
           onSearchClick={() => setIsSearchModalOpen(true)}
         />
         <main>
-            {renderPage()}
+            <ErrorBoundary>
+                {renderPage()}
+            </ErrorBoundary>
         </main>
         <SiteFooter />
         <QuotaErrorModal isOpen={isQuotaExhausted} onClose={() => setIsQuotaExhausted(false)} />

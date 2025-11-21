@@ -10,7 +10,6 @@ import {
     WorkoutDay,
     Page
 } from '../types';
-// FIX: Added missing imports for geminiService functions
 import { generateComprehensiveBeautyAnalysis, generateComprehensiveFitnessAnalysis, simulateWorkoutTransformation } from '../services/geminiService';
 
 // Re-using some components from the original file, adapted for dual-mode
@@ -168,7 +167,7 @@ const FitnessReportDisplay: React.FC<{ analysis: ComprehensiveFitnessResult }> =
         </div>
     );
 };
-// FIX: The file was truncated, this completes the component and adds the required default export.
+
 const AIAssessmentPage: React.FC<AIAssessmentPageProps> = ({
     mode,
     handleApiError,
@@ -178,7 +177,7 @@ const AIAssessmentPage: React.FC<AIAssessmentPageProps> = ({
     setConsultationToRestore,
     setPage,
 }) => {
-    const { t } = useLanguage();
+    const { language, t } = useLanguage();
     
     // Common state
     const [isLoading, setIsLoading] = useState(false);
@@ -210,7 +209,7 @@ const AIAssessmentPage: React.FC<AIAssessmentPageProps> = ({
                     setIsLoading(false);
                     return;
                 }
-                const skinResult = await generateComprehensiveBeautyAnalysis(symptoms, symptomDetails, imageBase64, imageMimeType, t('language'));
+                const skinResult = await generateComprehensiveBeautyAnalysis(symptoms, symptomDetails, imageBase64, imageMimeType, language);
                 setResult(skinResult);
             } else { // fitness mode
                 if (!fitnessData.age || !fitnessData.height || !fitnessData.weight) {
@@ -218,7 +217,7 @@ const AIAssessmentPage: React.FC<AIAssessmentPageProps> = ({
                     setIsLoading(false);
                     return;
                 }
-                const fitnessResult = await generateComprehensiveFitnessAnalysis(fitnessData, t('language'));
+                const fitnessResult = await generateComprehensiveFitnessAnalysis(fitnessData, language);
                 setResult(fitnessResult);
             }
         } catch (err) {
@@ -342,7 +341,7 @@ const AIAssessmentPage: React.FC<AIAssessmentPageProps> = ({
                         {isLoading && (
                             <div className="flex items-center justify-center py-10">
                               <div className="w-8 h-8 border-4 border-dashed rounded-full animate-spin border-rose-400"></div>
-                              <span className={`${t('language') === 'fa' ? 'mr-4' : 'ml-4'} text-gray-400`}>{t('assessment.report.generating')}</span>
+                              <span className={`${language === 'fa' ? 'mr-4' : 'ml-4'} text-gray-400`}>{t('assessment.report.generating')}</span>
                             </div>
                         )}
                         {error && !error.includes('(Quota Exceeded)') && <div className="p-6 text-red-400 bg-red-900/50 rounded-md">{error}</div>}

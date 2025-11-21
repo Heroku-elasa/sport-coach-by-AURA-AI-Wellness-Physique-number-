@@ -215,6 +215,9 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({
                      <button type="button" onClick={() => cameraInputRef.current?.click()} className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gray-700/80 rounded-md hover:bg-gray-600 transition-colors">{t('assessment.form.cameraButton')}</button>
                 </div>
             )}
+            <p className="text-xs text-gray-500 mt-2 text-center">
+                Supported formats: JPEG, PNG, WebP. Max size: 10MB.
+            </p>
         </div>
         
         <div className="pt-4 border-t border-white/10">
