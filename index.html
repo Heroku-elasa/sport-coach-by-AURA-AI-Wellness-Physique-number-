@@ -165,7 +165,12 @@
 <link rel="stylesheet" href="/index.css">
 </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Initial Loading Spinner -->
+      <div class="fixed inset-0 flex items-center justify-center bg-gray-900 z-50">
+        <div class="w-16 h-16 border-4 border-teal-500/30 border-t-teal-500 rounded-full animate-spin"></div>
+      </div>
+    </div>
     <!-- 4. Load the main app script -->
     <script type="module" src="/index.tsx"></script>
   </body>
